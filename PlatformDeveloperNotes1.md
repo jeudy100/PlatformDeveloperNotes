@@ -612,3 +612,106 @@ The **Check Syntax** button tells you:
 - Formula result is incompatible with formula return type
 - Field does not exist
 - Unknown function
+
+## Notes on "Implement Roll-Up Summary Fields
+- While formula fields calculate values using fields within a single record, roll-up summary fields calculate values from a set of related records, such as those in a related list.
+- You can perform different types of calculations with roll-up summary fields. You can count the number of detail records related to a master record, or calculate the sum, minimum value, or maximum value of a field in the detail records.
+- Based on master-detail relationships
+
+### Master-Detail Relationships
+- closely link objects together so that the master record controls specific behaviors of the detail and subdetail record
+- You define a roll-up summary field on the object that is on the master side of a master-detail relationship
+- For example, you can create a roll-up summary field on the Account object, summarizing related opportunities:
+
+![masterdetailrelationship](https://github.com/jeudy100/PlatformDeveloperNotes/assets/19577027/b43277b0-38ac-40ee-90ec-d990b5579db1)
+
+- Types of summaries that can be used:
+    - COUNT
+        - Totals the number of related records 
+    - SUM
+        - Totals the values in the field you select in the Field to Aggregate option.
+        - Only number, currency, and percent fields are available.
+    - MIN
+        - Displays the lowest value of the field you select in the Field to Aggregate option for all directly related records.
+        - Only number, currency, percent, date, and date/time fields are available.
+    - MAX
+        - Displays the highest value of the field you select in the Field to Aggregate option for all directly related records.
+        - Only number, currency, percent, date, and date/time fields are available.
+### Creating the Summary Field
+- Setup > ObjectManager > sObject > **Fields & Relationships** > New > Roll-Up Summary
+- Examples:
+    - Date Opportunity First Created
+    - Total Price of All Products Related to an Opportunity
+    - Minimum List Price of An Opportunity
+## Notes on "Create Validation Rules"
+- Rules that verify that data entered by users in records meets the standards you specify before they can save it.
+- Can contain a formula or expression that evaluates the data in one or more fields and returns a value of “True” or “False.”
+### Defining Validation Rules
+- You can create validation rules for objects, fields, campaign members, or case milestones
+- Setup > Object Manager > sObject > Validation Rules > New
+- Examples:
+    - Account number is numeric
+    - Date Must Be in the Current Year
+    - Number Range Validation
+    - Website Extension
+# Data Modeling
+## Notes on "Optimize Customer Data with Standar and Custom Object"
+- Standard objects
+    - objects that are included with Salesforce.
+    - Common business objects like Account, Contact, Lead, and Opportunity are all standard objects.
+- Custom objects
+    - objects that you create to store information that’s specific to your company or industry.
+    - For DreamHouse, D’Angelo wants to build a custom Property object that stores information about the homes his company is selling.
+### Create Custom Object
+- Setup > Object Manager > Create | Custom Object
+
+### Get to Know Fields
+- Field Types:
+    - Identity
+        -  A 15-character, case-sensitive field that’s automatically generated for every record.
+        -  You can find a record’s ID in its URL.
+    - System
+        - Read-only fields that provide information about a record from the system, like when the record was created or when it was last changed.
+    - Name
+        - All records need names so you can distinguish between them.
+        - You can use text names or auto-numbered names that automatically increment every time you create a record.
+    - Custom
+        - Fields you create on standard or custom objects are called custom fields.
+- Identity, system, and name fields are standard on every object in Salesforce.
+- You can customize standard objects by adding custom fields.
+  
+### Customize Responsibly
+- Be thoughtful about names
+- Require fields when necessary
+- Help out your users
+    - Even with careful naming, your users might not always be clear about the purpose of a particular object or field.
+    - Include descriptions for your custom objects and fields. For specialized or complicated customizations, use help text to give more details.
+
+## Notes on "Create Object Relationships"
+- There are two main types of object relationships:
+    - lookup
+        - links two objects together so that you can “look up” one object from the related items on another object.
+        - one-to-one or one-to-many.
+        - use lookup relationships when objects are only related in some cases.
+    - master-detail
+        - one object is the master and another is the detail.
+        - The master object controls certain behaviors of the detail object, like who can view the detail’s data.
+        - the detail object doesn’t work as a stand-alone.
+    - hierarchical relationship
+        - a special type of lookup relationship.
+        - The main difference between the two is that hierarchical relationships are only available on the User object.
+
+## Notes on "Work With Schema Builder"
+- A tool that lets you visualize and edit your data model
+- Setup > Objects and Fields > Schema Builder
+
+### Create an Object with Schema Builder
+1. In the left sidebar, click the Elements tab.
+2. Click Object and drag it onto the canvas.
+3. Enter information about your object. You can make it whatever you want!
+4. Click Save.
+
+### Create Fields with Schema Builder
+1. From the Elements tab, choose a field type and drag it onto the object you just created.
+2. Fill out the details about your new field.
+3. Click Save.
