@@ -242,7 +242,7 @@ Apex typically executes in system context with full object and field access. How
 
 For further details, refer to the topic on Using the `with sharing` or `without sharing` keywords (https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_classes_keywords_sharing.htm).
 
-## Introduction to Database Triggers in Salesforce
+## Notes on "Introduction to Database Triggers in Salesforce"
 
 ### What are Database Triggers?
 
