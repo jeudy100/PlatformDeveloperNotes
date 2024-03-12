@@ -586,3 +586,29 @@ Id jobId = System.enqueueJob(new MyQueueableClass(contacts));
 
 ## Notes on "Use forumla fields"
 
+### Create a new Formula
+- Go to the object manager and open up an object (Account, Contact, etc.)
+- Create a new field or relationship and the select formula as the type
+- The formula editor will appear when the type is formula
+- Setup > Object Manager > sObject > Fields & Relationships > New > Formula
+
+### Using the Formula Editor
+1. The formula editor comes in two flavors: Simple and Advanced. It’s tempting to use the Simple editor, but we always recommend using the Advanced editor. Advanced doesn’t mean more complicated. It means more tools for you to create powerful formulas.
+2. The Insert Field button opens a menu that allows you to select fields to use in your formula. Inserting from this menu automatically generates the correct syntax for accessing fields.
+3. The Insert Operator button opens a dropdown list of the available mathematical and logical operators.
+4. The Functions menu is where you view and insert formula functions.
+5. The text area is where you enter your formula. When writing formulas, keep in mind that: Whitespace doesn’t matter. You can insert as many spaces and line breaks as you want without affecting the formula’s execution. Formulas are case sensitive. Pay attention to capitalization of field and object names. When working with numbers, the standard order of operations applies.
+6. Once you’ve written a formula, you can use the Check Syntax button to ensure that everything is in working order before saving. If your formula has issues, the syntax checker alerts you to specific problems.
+![formulaeditor](https://github.com/jeudy100/PlatformDeveloperNotes/assets/19577027/617b0fb6-dd13-4a12-8797-fa7b91fde0ae)
+![FormulaEditorInsertField](https://github.com/jeudy100/PlatformDeveloperNotes/assets/19577027/38716d22-1bd2-4deb-9ef7-ead5ef6bd0a7)
+![FormulaEditorInsertOperator](https://github.com/jeudy100/PlatformDeveloperNotes/assets/19577027/532c7bec-2cef-43c0-b9fb-fb0d8ca8076f)
+![formulaeditorinsertfunctions](https://github.com/jeudy100/PlatformDeveloperNotes/assets/19577027/040a56ff-d257-4546-9579-ed8e28eb1e84)
+
+### Debug Formulas
+The **Check Syntax** button tells you:
+- Missing parentheses
+- Incorrect parameter type
+- Incorrect number of parameters for function
+- Formula result is incompatible with formula return type
+- Field does not exist
+- Unknown function
