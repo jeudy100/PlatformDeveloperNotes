@@ -1477,22 +1477,22 @@ Additional resources are available for performing common search tasks like auto-
 
 - With statements
     - By prefiltering results, you return fewer results and improve performance
-    - WITH Dvision
-        ```sosl
-            FIND {Cloud Kicks} RETURNING Account (Name, Industry) WITH DIVISION = 'Global'
-        ```
-      - WITH DATA CATEGORY
-        ```sosl
-            FIND {race} RETURNING KnowledgeArticleVersio(Id, Title WHERE PublishStatus='online' and language='en_US') WITH DATA CATEGORY Location__c AT America__c
-        ```
-      - WITH NETWORK
-        ```sosl
-            FIND {first place} RETURNING User (Id, Name), FeedItem (id, ParentId WHERE CreatedDate = THIS_YEAR Order by CreatedDate DESC) WITH NETWORK = '00000000000001'
-        ```
-      - WITH PRICEBOOK
-        ```sosl
-            Find {shoe} RETURNING Product2 WITH PricebookId = '01sxx0000002MffAAE'
-        ```
+    - WITH DIVISION
+    ```
+    FIND {Cloud Kicks} RETURNING Account (Name, Industry) WITH DIVISION = 'Global'
+    ```
+    - WITH DATA CATEGORY
+    ```
+    FIND {race} RETURNING KnowledgeArticleVersio(Id, Title WHERE PublishStatus='online' and language='en_US') WITH DATA CATEGORY Location__c AT America__c
+    ```
+    - WITH NETWORK
+    ```
+    FIND {first place} RETURNING User (Id, Name), FeedItem (id, ParentId WHERE CreatedDate = THIS_YEAR Order by CreatedDate DESC) WITH NETWORK = '00000000000001'
+    ```
+    - WITH PRICEBOOK
+    ```
+    Find {shoe} RETURNING Product2 WITH PricebookId = '01sxx0000002MffAAE'
+    ```
         
 #### SOQL Syntax
 
