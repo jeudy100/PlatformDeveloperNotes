@@ -1535,3 +1535,567 @@ Admins find the perfect article and then add terms to the Promoted Search Terms 
 - Your organization can create a maximum of 2,000 promoted terms.
 
 **Note:** Article search matches a promoted term whenever all keywords within the term occur within the user’s search terms, in any sequence. Each keyword must match exactly.
+
+# Apex Basics & Database
+
+## Notes on "Get Started with Apex"
+
+### What is Apex?
+
+Apex is a programming language that uses Java-like syntax and acts like database stored procedures. It enables developers to add business logic to system events, such as button clicks, updates of related records, and Visualforce pages.
+
+### Key Features of Apex:
+
+- **Hosted:** Apex is saved, compiled, and executed on the server—the Lightning Platform.
+- **Object Oriented:** Supports classes, interfaces, and inheritance.
+- **Strongly Typed:** Validates references to objects at compile time.
+- **Multitenant Aware:** Runs in a multitenant platform, enforcing limits to prevent code from monopolizing shared resources.
+- **Integrated with the Database:** Provides direct access to records and their fields, and offers statements and query languages to manipulate those records.
+- **Data Focused:** Provides transactional access to the database, allowing you to roll back operations.
+- **Easy to Use:** Based on familiar Java idioms.
+- **Easy to Test:** Built-in support for unit test creation, execution, and code coverage. Salesforce ensures that all custom Apex code works as expected by executing all unit tests prior to any platform upgrades.
+- **Versioned:** Custom Apex code can be saved against different versions of the API.
+
+### Supported Language Constructs:
+
+- Classes, interfaces, properties, and collections (including arrays).
+- Object and array notation.
+- Expressions, variables, and constants.
+- Conditional statements (if-then-else) and control flow statements (for loops and while loops).
+
+### Unique Features of Apex:
+
+- **Cloud Development:** Apex is stored, compiled, and executed in the cloud.
+- **Triggers:** Similar to triggers in database systems.
+- **Database Statements:** Allow direct database calls and query languages to query and search data.
+- **Transactions and Rollbacks:** Support for transactions and rollbacks.
+- **Global Access Modifier:** More permissive than the public modifier, allowing access across namespaces and applications.
+- **Versioning of Custom Code:** Supports versioning of custom code.
+- **Case-Insensitive Language:** Apex is case-insensitive.
+
+### Development Tools:
+
+- **Salesforce Extensions for Visual Studio Code:** Allows writing and debugging Apex on the client computer. See [Salesforce Visual Studio Code Extensions](https://developer.salesforce.com/tools/vscode?_ga=2.21094267.1973390464.1710861252-1789462011.1704986675).
+- **Salesforce User Interface:** Allows writing Apex and accessing debugging information directly in the browser using the Developer Console.
+
+### Data Types Overview
+
+Apex supports various data types, including a data type specific to Salesforce—the `sObject` data type. Below are the data types supported by Apex:
+
+#### Primitive Data Types:
+
+- Integer
+- Double
+- Long
+- Date
+- Datetime
+- String
+- ID
+- Boolean
+- And others
+
+#### sObject Data Type:
+
+- A generic `sObject`
+- Specific `sObject` types, such as `Account`, `Contact`, or `MyCustomObject__c` (you’ll learn more about sObjects in a later unit.)
+
+#### Collection Data Types:
+
+- List (or array) of primitives, sObjects, user-defined objects, objects created from Apex classes, or collections
+- Set of primitives, sObjects, user-defined objects, objects created from Apex classes, or collections
+- Map from a primitive to a primitive, sObject, or collection
+- Typed list of values, also known as an enum
+
+#### Other Data Types:
+
+- User-defined Apex classes
+- System-supplied Apex classes
+
+### Inspect Debug Logs
+
+Debug logs are useful for debugging your code. When Apex methods execute, the calls are logged in the debug log. Additionally, you can write your own debug messages to the log, which helps in debugging your code in case there are errors. 
+
+### Viewing Debug Logs:
+
+1. In the Developer Console, click the Logs tab and double-click the most recent log in the list.
+2. Select Debug Only to filter the log so that only log lines for `System.debug()` statements are shown.
+3. Filter the debug log in the Developer Console to view debug messages.
+
+# Notes on "Use sObjects"
+
+- Every record in Salesforce is natively represented as an sObject in Apex
+- Each Salesforce record is represented as an sObject before it is inserted into Salesforce.
+    - Likewise, when persisted records are retrieved from Salesforce, they’re stored in an sObject variable.
+
+# Notes on "Manipulate Records with DML"
+
+- provides a straightforward way to manage records by providing simple statements to insert, update, merge, delete, and restore records.
+- has direct access to your data in Salesforce
+
+### DML Statements
+
+The following DML statements are available:
+
+- `insert`
+- `update`
+- `upsert`
+- `delete`
+- `undelete`
+- `merge`
+
+Each DML statement accepts either a single sObject or a list (or array) of sObjects. Operating on a list of sObjects is a more efficient way for processing records.
+
+All those statements, except a couple, are familiar database operations. The `upsert` and `merge` statements are particular to Salesforce and can be quite handy.
+
+### Upsert Statement
+
+The `upsert` DML operation creates new records and updates sObject records within a single statement, using a specified field to determine the presence of existing objects, or the ID field if no field is specified.
+
+### Merge Statement
+
+The `merge` statement merges up to three records of the same sObject type into one of the records, deleting the others, and re-parenting any related records.
+
+### ID Field Auto-Assigned to New Records
+
+When inserting records, the system assigns an ID for each record. In addition to persisting the ID value in the database, the ID value is also auto-populated on the sObject variable that you used as an argument in the DML call.
+
+```java
+    // Create the account sObject 
+    Account acct = new Account(Name='Acme', Phone='(415)555-1212', NumberOfEmployees=100);
+    // Insert the account by using DML
+    insert acct;
+    // Get the new ID on the inserted sObject argument
+    ID acctID = acct.Id;
+    // Display this ID in the debug log
+    System.debug('ID = ' + acctID);
+    // Debug log result (the ID will be different in your case)
+    // DEBUG|ID = 001D000000JmKkeIAF
+```
+
+**Note: Beyond the Basics**
+
+Because the sObject variable in the example contains the ID after the DML call, you can reuse this sObject variable to perform further DML operations, such as updates, as the system will be able to map the sObject variable to its corresponding record by matching the ID.
+
+You can retrieve a record from the database to obtain its fields, including the ID field, but this can’t be done with DML. You’ll need to write a query by using SOQL. You’ll learn about SOQL in another unit.
+
+### Bulk DML
+
+You can perform DML operations either on a single sObject, or in bulk on a list of sObjects. Performing bulk DML operations is the recommended way because it helps avoid hitting governor limits, such as the DML limit of 150 statements per Apex transaction. This limit is in place to ensure fair access to shared resources in the Lightning Platform. Performing a DML operation on a list of sObjects counts as one DML statement, not as one statement for each sObject.
+
+This example inserts contacts in bulk by inserting a list of contacts in one call. The sample then updates those contacts in bulk too.
+
+```java
+// Create a list of contacts
+List<Contact> conList = new List<Contact> {
+    new Contact(FirstName='Joe',LastName='Smith',Department='Finance'),
+        new Contact(FirstName='Kathy',LastName='Smith',Department='Technology'),
+        new Contact(FirstName='Caroline',LastName='Roth',Department='Finance'),
+        new Contact(FirstName='Kim',LastName='Shain',Department='Education')};
+// Bulk insert all contacts with one DML call
+insert conList;
+// List to hold the new contacts to update
+List<Contact> listToUpdate = new List<Contact>();
+// Iterate through the list and add a title only
+//   if the department is Finance
+for(Contact con : conList) {
+    if (con.Department == 'Finance') {
+        con.Title = 'Financial analyst';
+        // Add updated contact sObject to the list.
+        listToUpdate.add(con);
+    }
+}
+// Bulk update all contacts with one DML call
+update listToUpdate;
+```
+
+### Upsert Records
+
+If you have a list containing a mix of new and existing records, you can process insertions and updates to all records in the list by using the upsert statement. Upsert helps avoid the creation of duplicate records and can save you time as you don’t have to determine which records exist first.
+
+The upsert statement matches the sObjects with existing records by comparing values of one field. If you don’t specify a field when calling this statement, the upsert statement uses the sObject’s ID to match the sObject with existing records in Salesforce. Alternatively, you can specify a field to use for matching. For custom objects, specify a custom field marked as external ID. For standard objects, you can specify any field that has the idLookup property set to true. For example, the Email field of Contact or User has the idLookup property set.
+
+#### Syntax
+
+`upsert sObject | sObject[]`
+`upsert sObject | sObject[]` `field`
+
+```java
+upsert sObjectList Account.Fields.MyExternalId;
+```
+Upsert uses the sObject record's primary key (the ID), an idLookup field, or an external ID field to determine whether it should create a new record or update an existing one:
+- If the key is not matched, a new object record is created.
+- If the key is matched once, the existing object record is updated.
+- If the key is matched multiple times, an error is generated and the object record is neither inserted or updated.
+
+```java
+// Insert the Josh contact
+Contact josh = new Contact(FirstName='Josh',LastName='Kaplan',Department='Finance');       
+insert josh;
+// Josh's record has been inserted
+//   so the variable josh has now an ID
+//   which will be used to match the records by upsert
+josh.Description = 'Josh\'s record has been updated by the upsert operation.';
+// Create the Kathy contact, but don't persist it in the database
+Contact kathy = new Contact(FirstName='Kathy',LastName='Brown',Department='Technology');
+// List to hold the new contacts to upsert
+List<Contact> contacts = new List<Contact> { josh, kathy };
+// Call upsert
+upsert contacts;
+// Result: Josh is updated and Kathy is created.
+```
+
+**Note**: The upsert call uses the ID to match the first contact. The josh variable is being reused for the upsert call. This variable has already been populated with the record ID from the previous insert call, so the ID doesn’t need to be set explicitly in this example.
+
+### Delete Records
+- You can delete persisted records using the delete statement.
+- Deleted records aren’t deleted permanently from Lightning Platform, but they’re placed in the Recycle Bin for 15 days from where they can be restored.
+
+```java
+Contact[] contactsDel = [SELECT Id FROM Contact WHERE LastName='Smith']; 
+delete contactsDel;
+```
+
+### DML Statement Exceptions
+- If a DML operation fails, it returns an exception of type DmlException
+
+```java
+try {
+    // This causes an exception because 
+    //   the required Name field is not provided.
+    Account acct = new Account();
+    // Insert the account 
+    insert acct;
+} catch (DmlException e) {
+    System.debug('A DML exception has occurred: ' +
+                e.getMessage());
+}
+```
+
+### Database Methods
+
+Apex contains the built-in Database class, which provides methods that perform DML operations and mirror the DML statement counterparts.
+
+- Database.insert()
+- Database.update()
+- Database.upsert()
+- Database.delete()
+- Database.undelete()
+- Database.merge()
+
+Database methods have an optional allOrNone parameter that allows you to specify whether the operation should partially succeed. By default, the allOrNone parameter is true.
+
+```java
+// You do not have to pass in a boolean if you allOrNone is true
+Database.insert(recordList);
+
+// You can pass in true if you want, though
+Database.insert(recordList, true);
+```
+```java
+// Pass in false to allow for partial success
+Database.insert(recordList, false);
+```
+
+```java
+// On a partial success the method returns the objects that were successfull
+Database.SaveResult[] results = Database.insert(recordList, false);
+```
+
+
+**Beyond the Basics**: In addition to these methods, the Database class contains methods that aren’t provided as DML statements. For example, methods used for transaction control and rollback, for emptying the Recycle Bin, and methods related to SOQL queries. You’ll learn about SOQL in another unit.
+
+### Example: Insert Records with Partial Success
+```java
+// Create a list of contacts
+List<Contact> conList = new List<Contact> {
+        new Contact(FirstName='Joe',LastName='Smith',Department='Finance'),
+        new Contact(FirstName='Kathy',LastName='Smith',Department='Technology'),
+        new Contact(FirstName='Caroline',LastName='Roth',Department='Finance'),
+        new Contact()};
+// Bulk insert all contacts with one DML call
+Database.SaveResult[] srList = Database.insert(conList, false);
+// Iterate through each returned result
+for (Database.SaveResult sr : srList) {
+    if (sr.isSuccess()) {
+        // Operation was successful, so get the ID of the record that was processed
+        System.debug('Successfully inserted contact. Contact ID: ' + sr.getId());
+    } else {
+        // Operation failed, so get all errors
+        for(Database.Error err : sr.getErrors()) {
+            System.debug('The following error has occurred.');
+            System.debug(err.getStatusCode() + ': ' + err.getMessage());
+            System.debug('Contact fields that affected this error: ' + err.getFields());
+	 }
+    }
+}
+```
+
+### Insert Related Records
+
+You can insert records related to existing records if a relationship has already been defined between the two objects, such as a lookup or master-detail relationship. A record is associated with a related record through a foreign key ID.
+
+```java
+Account acct = new Account(Name='SFDC Account');
+insert acct;
+// Once the account is inserted, the sObject will be 
+// populated with an ID.
+// Get this ID.
+ID acctID = acct.ID;
+// Add a contact to this account.
+Contact mario = new Contact(
+    FirstName='Mario',
+    LastName='Ruiz',
+    Phone='415.555.1212',
+    AccountId=acctID);
+insert mario;
+```
+
+### Update Releated Records
+
+Fields on related records can't be updated with the same call to the DML operation and require a separate DML call.
+
+```java
+// Query for the contact, which has been associated with an account.
+Contact queriedContact = [SELECT Account.Name 
+                          FROM Contact 
+                          WHERE FirstName = 'Mario' AND LastName='Ruiz'
+                          LIMIT 1];
+// Update the contact's phone number
+queriedContact.Phone = '(415)555-1213';
+// Update the related account industry
+queriedContact.Account.Industry = 'Technology';
+// Make two separate calls 
+// 1. This call is to update the contact's phone.
+update queriedContact;
+// 2. This call is to update the related account's Industry field.
+update queriedContact.Account; 
+```
+
+### Delete Releated Records
+
+The delete operation supports cascading deletions. If you delete a parent object, you delete its children automatically, as long as each child record can be deleted.
+
+```java
+Account[] queriedAccounts = [SELECT Id FROM Account WHERE Name='SFDC Account'];
+delete queriedAccounts;
+```
+
+### Transactions and DML
+
+DML operations execute within a transaction. All DML operations in a transaction either complete successfully, or if an error occurs in one operation, the entire transaction is rolled back and no data is committed to the database.
+
+**Transaction Boundaries**
+- a trigger
+- a class method
+- an anonymous block of code
+- an Apex page
+- a custom Web service method.
+
+## Notes on "Write SOQL Queries"
+
+Apex has direct access to Salesforce records that are stored in the database, you can embed SOQL queries in your Apex code and get results in a straightforward fashion.
+This is referred to as **inline SOQL**.
+
+```java
+Account[] accts = [SELECT Name,Phone FROM Account];
+```
+
+### Use the Query Editor
+
+The Developer Console provides the Query Editor console, which enables you to run your SOQL queries and view results.
+
+### Basic SOQL Syntax
+
+- Unlike other SQL languages, you can’t specify * for all fields.
+    - You must specify every field you want to get explicitly.
+    - If you try to access a field you haven’t specified in the SELECT clause, you’ll get an error because the field hasn’t been retrieved.
+-  Id field in the query as it is always returned in Apex queries, whether it is specified in the query or not
+-  Basic Reserved words:
+    - SELECT
+    - FROM
+    - WHERE
+    - ORDERBY
+    - LIMIT
+    - AND
+    - OR
+    - LIKE
+
+```sql
+SELECT fields FROM ObjectName [WHERE Condition]
+```
+
+### Accessing variables
+```sql
+String targetDepartment = 'Wingo';
+Contact[] techContacts = [SELECT FirstName,LastName 
+                          FROM Contact WHERE Department=:targetDepartment];
+```
+
+### Query Related Records
+
+Records in Salesforce can be linked to each other through relationships: lookup relationships or master-detail relationships. To get child records related to a parent record, add an inner query for the child records.
+
+```sql
+SELECT Name, (SELECT LastName FROM Contacts) FROM Account WHERE Name = 'SFDC Computing'
+```
+
+You can traverse a relationship from a child object (contact) to a field on its parent (Account.Name) by using dot notation.
+
+```sql
+Contact[] cts = [SELECT Account.Name FROM Contact 
+                 WHERE FirstName = 'Carol' AND LastName='Ruiz'];
+Contact carol = cts[0];
+String acctName = carol.Account.Name;
+System.debug('Carol\'s account name is ' + acctName);
+```
+
+**Note**: Custom objects can also be linked together by using custom relationships. Custom relationship names end with the __r suffix.
+
+### Query Record in Batches By Using SOQL For Loops
+
+With a SOQL for loop, you can include a SOQL query within a for loop. 
+
+- The results of a SOQL query can be iterated over within the loop.
+- SOQL for loops use a different method for retrieving records—records are retrieved using efficient chunking with calls to the query and queryMore methods of the SOAP API.
+- By using SOQL for loops, you can avoid hitting the heap size limit.
+
+```java
+for (variable : [soql_query]) {
+    code_block
+}
+
+for (variable_list : [soql_query]) {
+    code_block
+}
+```
+
+**Note**: It is preferable to use the sObject list format of the SOQL for loop as the loop executes once for each batch of 200 sObjects. Doing so enables you to work on batches of records and perform DML operations in batch, which helps avoid reaching governor limits.
+
+```java
+insert new Account[]{new Account(Name = 'for loop 1'), 
+                     new Account(Name = 'for loop 2'), 
+                     new Account(Name = 'for loop 3')};
+// The sObject list format executes the for loop once per returned batch
+// of records
+Integer i=0;
+Integer j=0;
+for (Account[] tmp : [SELECT Id FROM Account WHERE Name LIKE 'for loop _']) {
+    j = tmp.size();
+    i++;
+}
+System.assertEquals(3, j); // The list should have contained the three accounts
+                       // named 'yyy'
+System.assertEquals(1, i); // Since a single batch can hold up to 200 records and,
+                       // only three records should have been returned, the 
+                       // loop should have executed only once
+```
+
+## Notes on "Write SOSL Queries"
+
+Salesforce Object Search Language (SOSL) is a Salesforce search language that is used to perform text searches in records. SOSL is similar to Apache Lucene.
+
+```java
+List<List<SObject>> searchList = [FIND 'SFDC' IN ALL FIELDS RETURNING Account(Name), Contact(FirstName,LastName)];
+```
+
+### Differences and Similarities Between SOQL and SOSL
+
+Both SOQL and SOSL are querying languages in Salesforce, but they have distinct differences and similarities:
+
+#### Differences:
+1. **Scope of Querying:**
+   - SOQL: Can only query one standard or custom object at a time.
+   - SOSL: Can search across all objects in an organization in a single query.
+
+2. **Matching Criteria:**
+   - SOQL: Performs an exact match by default (when not using wildcards).
+   - SOSL: Matches fields based on a word match, allowing for more flexible search results.
+
+3. **Syntax:**
+   - SOQL: Follows a structured query language syntax similar to SQL.
+   - SOSL: Has its own syntax optimized for searching across multiple objects.
+
+#### Similarities:
+1. **Purpose:**
+   - Both are used to search and retrieve data from Salesforce records.
+
+2. **Usage:**
+   - Both can be used to retrieve data based on specified criteria.
+
+#### Use Cases:
+- Use SOQL when you need to retrieve records for a single object and require precise matches.
+- Use SOSL when you need to search fields across multiple objects, allowing for more flexible and broader search capabilities. SOSL queries are particularly useful for searching text fields across different objects.
+
+### Basic SOSL Syntax
+
+In SOSL, you can specify the following search criteria:
+
+1. **Text Expression:** Specifies the single word or phrase to search for within the records.
+
+2. **Scope of Fields:** Defines the fields to search within for the specified text expression.
+
+3. **List of Objects and Fields:** Specifies the objects and fields from which to retrieve data.
+
+4. **Conditions:** Sets conditions for selecting rows in the source objects based on the search criteria.
+
+### Syntax Example:
+
+**Apex**
+```sosl
+FIND {search_text} [IN field_list] RETURNING object_list [(field_list)][(condition_list)]
+```
+
+**Query Editor**
+```sosl
+FIND {SearchQuery} [IN SearchGroup] [RETURNING ObjectsAndFields]
+```
+
+- SearchQuery is the text to search for (a single word or a phrase).
+    - Search terms can be grouped with logical operators (AND, OR) and parentheses.
+    - Also, search terms can include wildcard characters (*, ?). The * wildcard matches zero or more characters at the middle or end of the search term. The ? wildcard matches only one character at the middle or end of the search term.
+- Text searches are case-insensitive
+- `SearchGroup`
+    - is optional
+    - default scope is all fields
+    - **Values**
+        - `ALL FIELDS`
+        - `NAME FIELDS`
+        - `EMAIL FIELDS`
+        - `PHONE FIELDS`
+        - `SIDEBAR FIELDS`
+- `ObjectsAndFields`
+    - is optional
+    - It is the information to return in the search result.
+        - a list of one or more sObjects and, within each sObject, list of one or more fields, with optional values to filter against.
+    - If not specified, the search results contain the IDs of all objects found.
+
+### Single words and phrases
+
+A SearchQuery contains two types of text:
+
+1. Single Word
+    - single word, such as test or hello.
+    - Words in the SearchQuery are delimited by spaces, punctuation, and changes from letters to digits (and vice-versa).
+    - Words are always case insensitive.
+3. Phrase
+    - collection of words and spaces surrounded by double quotes such as "john smith".
+    - Multiple words can be combined together with logic and grouping operators to form a more complex query.
+
+### SOSL Apex 
+
+```java
+String soslFindClause = 'Wingo OR SFDC';
+List<List<sObject>> searchList = [FIND :soslFindClause IN ALL FIELDS
+                    RETURNING Account(Name),Contact(FirstName,LastName,Department)];
+Account[] searchAccounts = (Account[])searchList[0];
+Contact[] searchContacts = (Contact[])searchList[1];
+System.debug('Found the following accounts.');
+for (Account a : searchAccounts) {
+    System.debug(a.Name);
+}
+System.debug('Found the following contacts.');
+for (Contact c : searchContacts) {
+    System.debug(c.LastName + ', ' + c.FirstName);
+}
+```
+
