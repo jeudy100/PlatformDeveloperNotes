@@ -2099,3 +2099,1828 @@ for (Contact c : searchContacts) {
 }
 ```
 
+# Apex Triggers
+
+## Notes on "Get Started With Apex Triggers
+
+### Writing Apex Triggers
+
+**Overview:**
+Apex triggers enable you to perform custom actions before or after events to records in Salesforce, such as insertions, updates, or deletions. Just like database systems support triggers, Apex provides trigger support for managing records.
+
+**Purpose:**
+Triggers are typically used to perform operations based on specific conditions, to modify related records, or restrict certain operations from happening. You can use triggers to do anything you can do in Apex, including executing SOQL and DML or calling custom Apex methods.
+
+**When to Use:**
+Use triggers to perform tasks that can’t be done by using the point-and-click tools in the Salesforce user interface. For example, if validating a field value or updating a field on a record, use validation rules and flows. Use Apex triggers if performance and scale are important, if your logic is too complex for the point-and-click tools, or if you're executing CPU-intensive operations.
+
+**Scope:**
+Triggers can be defined for top-level standard objects, such as Account or Contact, custom objects, and some standard child objects. Triggers are active by default when created. Salesforce automatically fires active triggers when the specified database events occur.
+
+### Trigger Syntax
+
+**Structure:**
+The syntax of a trigger definition differs from a class definition’s syntax. It starts with the `trigger` keyword, followed by the name of the trigger, the Salesforce object associated with the trigger, and the conditions under which it fires.
+
+**Syntax:**
+```apex
+trigger TriggerName on ObjectName (trigger_events) {
+   code_block
+}
+```
+
+**Trigger Events:**
+To execute a trigger before or after insert, update, delete, and undelete operations, specify multiple trigger events in a comma-separated list. The events you can specify are:
+
+- `before insert`
+- `before update`
+- `before delete`
+- `after insert`
+- `after update`
+- `after delete`
+- `after undelete`
+
+### Trigger Example: HelloWorldTrigger
+
+**Description:**
+This simple trigger fires before inserting an account and writes a message to the debug log.
+
+**Steps to Implement:**
+1. In the Developer Console, click File | New | Apex Trigger.
+2. Enter `HelloWorldTrigger` for the trigger name, and then select `Account` for the sObject. Click Submit.
+3. Replace the default code with the following:
+
+```apex
+trigger HelloWorldTrigger on Account (before insert) {
+    System.debug('Hello World!');
+}
+```
+
+**Testing the Trigger:**
+1. Save the trigger by pressing Ctrl+S.
+2. To test the trigger, create an account.
+3. Click Debug | Open Execute Anonymous Window.
+4. In the new window, add the following and then click Execute:
+
+```apex
+Account a = new Account(Name='Test Trigger');
+insert a;
+```
+
+**Result:**
+In the debug log, find the "Hello World!" statement. The log also shows that the trigger has been executed.
+
+### Types of Triggers
+
+**1. Before Triggers:**
+   - **Purpose:** Before triggers are used to update or validate record values before they’re saved to the database.
+   - **Functionality:** They allow modification or validation of data before it's inserted, updated, or deleted in the database.
+
+**2. After Triggers:**
+   - **Purpose:** After triggers are used to access field values that are set by the system (such as a record's Id or LastModifiedDate field), and to affect changes in other records.
+   - **Functionality:** They operate on records that have been saved to the database. The records that fire the after trigger are read-only, but you can perform operations such as updating related records based on changes made to the triggering records.
+
+### Using Context Variables in Triggers
+
+**Accessing Records:**
+To access the records that caused the trigger to fire, use context variables. For example, `Trigger.new` contains all the records that were inserted in insert or update triggers. `Trigger.old` provides the old version of sObjects before they were updated in update triggers, or a list of deleted sObjects in delete triggers.
+
+**Iterating Over Records:**
+Triggers can fire when one record is inserted, or when many records are inserted in bulk via the API or Apex. Therefore, context variables, such as `Trigger.new`, can contain only one record or multiple records. You can iterate over `Trigger.new` to get each individual sObject.
+
+**Example:**
+```apex
+trigger HelloWorldTrigger on Account (before insert) {
+    for(Account a : Trigger.new) {
+        a.Description = 'New description';
+    }   
+}
+```
+
+**Note:**
+The system saves the records that fired the before trigger after the trigger finishes execution. You can modify the records in the trigger without explicitly calling a DML insert or update operation. If you perform DML statements on those records, you get an error.
+
+**Other Context Variables:**
+- `Trigger.isExecuting`
+- `Trigger.isInsert`
+- `Trigger.isUpdate`
+- `Trigger.isDelete`
+- `Trigger.isBefore`
+- `Trigger.isAfter`
+- `Trigger.isUndelete`
+- `Trigger.new`
+- `Trigger.newMap`
+- `Trigger.old`
+- `Trigger.oldMap`
+- `Trigger.operationType`
+- `Trigger.size`
+
+### Calling a Class Method from a Trigger
+
+**Overview:**
+You can call public utility methods from a trigger to enable code reuse, reduce trigger size, and improve maintenance of your Apex code. This allows you to leverage object-oriented programming principles.
+
+**Example: EmailManager Class**
+
+```apex
+public class EmailManager {
+    // Public method
+    public static void sendMail(String address, String subject, String body) {
+        // Create an email message object
+        Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
+        String[] toAddresses = new String[] {address};
+        mail.setToAddresses(toAddresses);
+        mail.setSubject(subject);
+        mail.setPlainTextBody(body);
+        // Pass this email message to the built-in sendEmail method 
+        // of the Messaging class
+        Messaging.SendEmailResult[] results = Messaging.sendEmail(
+                                  new Messaging.SingleEmailMessage[] { mail });
+        // Call a helper method to inspect the returned results
+        inspectResults(results);
+    }
+    // Helper method
+    private static Boolean inspectResults(Messaging.SendEmailResult[] results) {
+        Boolean sendResult = true;
+        // sendEmail returns an array of result objects.
+        // Iterate through the list to inspect results. 
+        // In this class, the methods send only one email, 
+        // so we should have only one result.
+        for (Messaging.SendEmailResult res : results) {
+            if (res.isSuccess()) {
+                System.debug('Email sent successfully');
+            }
+            else {
+                sendResult = false;
+                System.debug('The following errors occurred: ' + res.getErrors());                 
+            }
+        }
+        return sendResult;
+    }
+}
+```
+
+**Trigger Example: ExampleTrigger**
+
+```apex
+trigger ExampleTrigger on Contact (after insert, after delete) {
+    if (Trigger.isInsert) {
+        Integer recordCount = Trigger.new.size();
+        // Call a utility method from another class
+        EmailManager.sendMail('Your email address', 'Trailhead Trigger Tutorial', 
+                    recordCount + ' contact(s) were inserted.');
+    }
+    else if (Trigger.isDelete) {
+        // Process after delete
+    }
+}
+```
+
+**Testing the Trigger:**
+1. Create a contact.
+2. Execute the trigger.
+3. Check the debug log for trigger firing and email confirmation.
+
+With this trigger in place, you receive an email every time you add one or more contacts!
+
+Got it! Let's condense the notes to reduce the use of lists:
+
+### Notes:
+
+#### Adding Related Records
+
+- **Purpose**: Triggers manage and access records related to the trigger context—records that caused the trigger to fire.
+  
+- **Functionality**: 
+  - This trigger adds a related opportunity for each new or updated account if no opportunity is already associated with it.
+  - It performs a SOQL query to retrieve child opportunities for the accounts the trigger fired on.
+  - Iterates over the list of sObjects in Trigger.new to access each account sObject.
+  - If an account lacks related opportunity sObjects, it creates one within the loop.
+  - Finally, it inserts any new opportunities created.
+
+#### Trigger Implementation:
+
+- **Developer Console**:
+  - Add the trigger using the Developer Console.
+  ```apex
+	  trigger AddRelatedRecord on Account(after insert, after update) {
+		    List<Opportunity> oppList = new List<Opportunity>();
+		    // Get the related opportunities for the accounts in this trigger
+		    Map<Id,Account> acctsWithOpps = new Map<Id,Account>(
+		        [SELECT Id,(SELECT Id FROM Opportunities) FROM Account WHERE Id IN :Trigger.new]);
+		    // Add an opportunity for each account if it doesn't already have one.
+		    // Iterate through each account.
+		    for(Account a : Trigger.new) {
+		        System.debug('acctsWithOpps.get(a.Id).Opportunities.size()=' + acctsWithOpps.get(a.Id).Opportunities.size());
+		        // Check if the account already has a related opportunity.
+		        if (acctsWithOpps.get(a.Id).Opportunities.size() == 0) {
+		            // If it doesn't, add a default opportunity
+		            oppList.add(new Opportunity(Name=a.Name + ' Opportunity',
+		                                       StageName='Prospecting',
+		                                       CloseDate=System.today().addMonths(1),
+		                                       AccountId=a.Id));
+		        }           
+		    }
+		    if (oppList.size() > 0) {
+		        insert oppList;
+		    }
+	  }
+   ```
+
+#### Testing Procedure:
+
+- **Test Scenario**:
+  - Create an account named "Apples & Oranges" in the Salesforce user interface.
+
+- **Validation**:
+  - In the Opportunities related list on the account’s page, observe the new opportunity added automatically by the trigger.
+
+#### Efficiency Improvement:
+
+- **Current Approach**:
+  - The trigger iterates over all records in the trigger context using a for loop on Trigger.new.
+
+- **Enhancement Opportunity**:
+  - Optimize the loop to iterate only over accounts without opportunities, making the trigger more efficient.
+  - Refer to the Bulk Trigger Design Patterns unit to learn how to modify the SOQL query to fetch only accounts with no opportunities and iterate over those records.
+
+### Using Trigger Exceptions
+
+#### Introduction:
+
+- **Purpose**: Add restrictions on certain database operations, such as preventing records from being saved under certain conditions.
+  
+#### Method:
+
+- **addError() Method**:
+  - Call the addError() method on the sObject in question to prevent saving records in a trigger.
+  - Throws a fatal error inside a trigger, displaying the error message in the user interface and logging it.
+
+#### Example Trigger:
+
+- **Account Deletion Trigger**:
+  - Prevents the deletion of an account if it has related opportunities.
+  - By default, deleting an account causes a cascade delete of all its related records.
+  
+```apex
+trigger AccountDeletion on Account (before delete) {
+    // Prevent the deletion of accounts if they have related opportunities.
+    for (Account a : [SELECT Id FROM Account
+                     WHERE Id IN (SELECT AccountId FROM Opportunity) AND
+                     Id IN :Trigger.old]) {
+        Trigger.oldMap.get(a.Id).addError(
+            'Cannot delete account with related opportunities.');
+    }
+}
+```
+
+#### Test Scenario:
+
+- **Execution**:
+  - Navigate to the Apples & Oranges account’s page in the Salesforce user interface and click Delete.
+  - In the confirmation popup, click OK.
+
+- **Validation**:
+  - Find the validation error with the custom error message "Cannot delete account with related opportunities."
+
+#### Additional Steps:
+
+- **Disabling the Trigger**:
+  - Disable the AccountDeletion trigger to enable checking challenges.
+  - From Setup, search for Apex Triggers.
+  - On the Apex Triggers page, click Edit next to the AccountDeletion trigger.
+  - Deselect Is Active.
+  - Click Save.
+
+#### Note:
+
+- **Rollback Behavior**:
+  - Calling addError() in a trigger causes the entire set of operations to roll back, except when bulk DML is called with partial success.
+  - If a bulk DML call in the Lightning Platform API spawns the trigger, the runtime engine sets aside bad records and attempts a partial save of the records that did not generate errors.
+  - If a DML statement in Apex spawns the trigger, any error rolls back the entire operation, but the runtime engine still processes every record in the operation to compile a comprehensive list of errors.
+
+### Triggers and Callouts
+
+#### Introduction:
+
+- **Integration with External Web Services**:
+  - Apex allows integration with external Web services through callouts.
+  - Callouts are Apex calls to external Web services.
+
+#### Callouts in Triggers:
+
+- **Asynchronous Execution**:
+  - Callouts from triggers must be asynchronous to prevent blocking the trigger process while waiting for the external service's response.
+  - Asynchronous callouts are executed in a background process, and the response is received asynchronously.
+
+#### Future Methods:
+
+- **Definition**:
+  - Methods that execute asynchronously are termed as future methods.
+  - Annotated with @future(callout=true) to indicate that they make callouts.
+
+#### Example Class:
+
+```apex
+public class CalloutClass {
+    @future(callout=true)
+    public static void makeCallout() {
+        HttpRequest request = new HttpRequest();
+        // Set the endpoint URL.
+        String endpoint = 'http://yourHost/yourService';
+        request.setEndPoint(endpoint);
+        // Set the HTTP verb to GET.
+        request.setMethod('GET');
+        // Send the HTTP request and get the response.
+        HttpResponse response = new HTTP().send(request);
+    }
+}
+```
+
+#### Trigger Implementation:
+
+- **Trigger CalloutTrigger**:
+  - Calls the method in CalloutClass to make a callout asynchronously.
+  
+```apex
+trigger CalloutTrigger on Account (before insert, before update) {
+    CalloutClass.makeCallout();
+}
+```
+
+#### Note:
+
+- **Endpoint URL and Remote Site**:
+  - The provided example uses a hypothetical endpoint URL for illustration purposes only.
+  - To execute the example, modify the endpoint URL to a valid one and add a remote site in Salesforce for the endpoint.
+
+#### Additional Resources:
+
+- **Further Information**:
+  - For more detailed information on callouts, refer to "Invoking Callouts Using Apex" in the Apex Developer Guide.
+
+### Bulk Trigger Design Patterns
+
+#### Introduction:
+
+- **Optimization for Bulk Operations**:
+  - Apex triggers are optimized for bulk operations.
+  - Utilizing bulk design patterns enhances trigger performance, reduces server resource consumption, and minimizes the risk of exceeding platform limits.
+
+#### Importance of Bulkification:
+
+- **Efficient Processing**:
+  - Bulkified code efficiently processes large numbers of records and operates within governor limits on the Lightning Platform.
+  - Governor limits prevent runaway code from monopolizing resources on the multitenant platform.
+
+#### Bulk Design Patterns:
+
+- **Operating on All Records**:
+  - Process all records in the trigger context instead of individual records.
+  - This approach improves efficiency and performance.
+
+- **SOQL and DML Bulk Operations**:
+  - Perform SOQL queries and DML operations on collections of sObjects rather than single sObjects at a time.
+  - Best practices for SOQL and DML bulk operations apply to any Apex code, including classes.
+
+#### Examples:
+
+- **Trigger Context Variable**:
+  - Examples provided are based on triggers and utilize the Trigger.new context variable.
+
+#### Note:
+
+- **General Applicability**:
+  - While demonstrated within triggers, the bulk design patterns are applicable to any Apex code.
+  - Utilizing these patterns ensures optimal performance and adherence to governor limits.
+
+### Operating on Record Sets
+
+#### Basic Bulk Design Concept:
+
+- **Bulkified Triggers**:
+  - Bulkified triggers operate on all sObjects in the trigger context.
+  - Triggers typically operate on one record if the action originates from the user interface, but on a record set if the action is bulk DML or through the API.
+  - It's a good practice to assume that triggers operate on a collection of records to ensure functionality in all scenarios.
+
+#### Example Triggers:
+
+- **Non-Bulkified Trigger (MyTriggerNotBulk)**:
+  - Assumes that only one record caused the trigger to fire.
+  - Doesn't work on a full record set when multiple records are inserted in the same transaction.
+
+```apex
+trigger MyTriggerNotBulk on Account (before insert) {
+    Account a = Trigger.new[0];
+    a.Description = 'New description';
+}
+```
+
+- **Bulkified Trigger (MyTriggerBulk)**:
+  - Modified version of MyTriggerNotBulk.
+  - Uses a for loop to iterate over all available sObjects in Trigger.new.
+  - Works effectively whether Trigger.new contains one sObject or many sObjects.
+
+```apex
+trigger MyTriggerBulk on Account (before insert) {
+    for(Account a : Trigger.new) {
+        a.Description = 'New description';
+    }
+}
+```
+
+#### Note:
+
+- **Programming Practice**:
+  - Always assume that triggers operate on a collection of records to ensure functionality in all circumstances.
+
+### Performing Bulk SOQL
+
+#### Introduction:
+
+- **Efficient SOQL Queries**:
+  - Utilizing SOQL features can reduce code complexity and database queries, improving performance and avoiding hitting query limits.
+
+#### Inefficient Query Pattern:
+
+- **Non-Bulkified Trigger (SoqlTriggerNotBulk)**:
+  - Makes a SOQL query inside a for loop to retrieve related opportunities for each account.
+  - This pattern results in multiple SOQL queries if the trigger operates on a large list of accounts, potentially hitting query limits.
+
+```apex
+trigger SoqlTriggerNotBulk on Account (after update) {   
+    for(Account a : Trigger.new) {
+        // Inefficient SOQL query as it runs once for each account!
+        Opportunity[] opps = [SELECT Id, Name, CloseDate 
+                             FROM Opportunity WHERE AccountId = :a.Id];
+        // Do some other processing
+    }
+}
+```
+
+#### Recommended Approach:
+
+- **Bulkified Trigger (SoqlTriggerBulk)**:
+  - Uses a single SOQL query outside the loop to retrieve accounts and their related opportunities efficiently.
+  - Enhances performance and reduces the number of queries.
+
+```apex
+trigger SoqlTriggerBulk on Account (after update) {  
+    // Perform SOQL query once.    
+    // Get the accounts and their related opportunities.
+    List<Account> acctsWithOpps = 
+        [SELECT Id, (SELECT Id, Name, CloseDate FROM Opportunities) 
+         FROM Account WHERE Id IN :Trigger.new];
+    // Iterate over the returned accounts    
+    for(Account a : acctsWithOpps) { 
+        Opportunity[] relatedOpps = a.Opportunities;  
+        // Do some other processing
+    }
+}
+```
+
+#### Alternative Query:
+
+- **Retrieving Only Opportunities**:
+  - If only opportunities are needed, the query can be simplified to retrieve related opportunities directly.
+
+```apex
+trigger SoqlTriggerBulk on Account (after update) {  
+    // Perform SOQL query once.    
+    // Get the related opportunities for the accounts in this trigger.
+    List<Opportunity> relatedOpps = [SELECT Id, Name, CloseDate FROM Opportunity
+    WHERE AccountId IN :Trigger.new];
+// Iterate over the related opportunities    
+for(Opportunity opp : relatedOpps) { 
+    // Do some other processing
+}
+```
+
+#### Combined Query and Loop:
+
+- **SOQL For Loop**:
+  - Combines the SOQL query and the for loop into one statement for conciseness.
+
+```apex
+trigger SoqlTriggerBulk on Account (after update) {  
+    // Perform SOQL query once.    
+    // Get the related opportunities for the accounts in this trigger,
+    // and iterate over those records.
+    for(Opportunity opp : [SELECT Id, Name, CloseDate FROM Opportunity
+        WHERE AccountId IN :Trigger.new]) {
+        // Do some other processing
+    }
+}
+```
+
+#### Note:
+
+- **Batch Processing**:
+  - Triggers execute on batches of 200 records at a time.
+  - The SOQL for loop may be called twice if the trigger operates on more than 200 records, but this is a limitation of trigger batching, not the SOQL for loop.
+  - Despite the potential duplicate execution, the SOQL for loop provides more elegant code compared to iterating over a collection variable.
+
+
+### Performing Bulk DML
+
+#### Introduction:
+
+- **Efficient DML Operations**:
+  - Optimize DML calls by performing them on collections of sObjects whenever possible.
+  - The Apex runtime allows up to 150 DML calls in one transaction.
+
+#### Inefficient DML Pattern:
+
+- **Non-Bulkified Trigger (DmlTriggerNotBulk)**:
+  - Updates each related opportunity individually inside a for loop.
+  - Inefficient usage of resources, potentially exceeding DML limits if operating on a large number of records.
+
+```apex
+trigger DmlTriggerNotBulk on Account(after update) {   
+    // Get the related opportunities for the accounts in this trigger.        
+    List<Opportunity> relatedOpps = [SELECT Id,Name,Probability FROM Opportunity
+        WHERE AccountId IN :Trigger.new];          
+    // Iterate over the related opportunities
+    for(Opportunity opp : relatedOpps) {      
+        // Update the description when probability is greater 
+        // than 50% but less than 100% 
+        if ((opp.Probability >= 50) && (opp.Probability < 100)) {
+            opp.Description = 'New description for opportunity.';
+            // Update once for each opportunity -- not efficient!
+            update opp;
+        }
+    }    
+}
+```
+
+- **Bulkified Trigger (DmlTriggerBulk)**:
+  - shows how to perform DML in bulk efficiently with only one DML call on a list of opportunities
+  - the trigger performs the DML call outside the loop on this list after all opportunities have been added to the list.
+  - This pattern uses only one DML call regardless of the number of sObjects being updated.
+
+```apex
+trigger DmlTriggerBulk on Account(after update) {   
+    // Get the related opportunities for the accounts in this trigger.        
+    List<Opportunity> relatedOpps = [SELECT Id,Name,Probability FROM Opportunity
+        WHERE AccountId IN :Trigger.new];
+    List<Opportunity> oppsToUpdate = new List<Opportunity>();
+    // Iterate over the related opportunities
+    for(Opportunity opp : relatedOpps) {      
+        // Update the description when probability is greater 
+        // than 50% but less than 100% 
+        if ((opp.Probability >= 50) && (opp.Probability < 100)) {
+            opp.Description = 'New description for opportunity.';
+            oppsToUpdate.add(opp);
+        }
+    }
+    // Perform DML on a collection
+    update oppsToUpdate;
+}
+```
+
+**Bulk Design Pattern in Action: Example of Getting Related Records**
+
+**Objective:**  
+Write a trigger to access accounts' related opportunities efficiently.
+
+**Requirements for the AddRelatedRecord Trigger:**
+- Trigger fires after accounts are inserted or updated.
+- Adds a default opportunity for every account that doesn’t already have one.
+
+**Approach:**
+1. **Efficient Processing:**
+   - Modify the trigger code and SOQL query to fetch only relevant records.
+   - Iterate over these records for efficient processing.
+
+2. **Handling Inserts and Updates:**
+   - For newly-inserted accounts, add a default opportunity.
+   - For updated accounts, determine if they have a related opportunity.
+
+3. **Implementation:**
+   - Use a switch statement on `Trigger.operationType` to differentiate between inserts and updates.
+   - Maintain a `toProcess` variable to track accounts needing processing.
+
+**Example Implementation:**
+- Modify existing trigger code for `AddRelatedRecord`.
+- Use switch statement to handle inserts and updates separately.
+- Add necessary logic to determine whether an account already has a related opportunity.
+
+**Note:**  
+If the `AddRelatedRecord` trigger hasn't been created yet, it can be developed following this section.
+
+```apex
+trigger AddRelatedRecord on Account(after insert, after update) {
+    List<Opportunity> oppList = new List<Opportunity>();
+    // Add an opportunity for each account if it doesn't already have one.
+    // Iterate over accounts that are in this trigger but that don't have opportunities.
+    List<Account> toProcess = null;
+    switch on Trigger.operationType {
+        when AFTER_INSERT {
+        // All inserted Accounts will need the Opportunity, so there is no need to perform the query
+            toProcess = Trigger.New;
+        }
+        when AFTER_UPDATE {
+            toProcess = [SELECT Id,Name FROM Account
+                         WHERE Id IN :Trigger.New AND
+                         Id NOT IN (SELECT AccountId FROM Opportunity WHERE AccountId in :Trigger.New)];
+        }
+    }
+    for (Account a : toProcess) {
+        // Add a default opportunity for this account
+        oppList.add(new Opportunity(Name=a.Name + ' Opportunity',
+                                    StageName='Prospecting',
+                                    CloseDate=System.today().addMonths(1),
+                                    AccountId=a.Id));
+    }
+    if (oppList.size() > 0) {
+        insert oppList;
+    }
+}
+```
+
+# Asynchronous Apex
+
+## Notes on "Asynchronous Processing Basics"
+
+**Asynchronous Processing in Salesforce**
+
+**Scenario:**
+Before your weekly Dance Revolution practice, you have multiple tasks to accomplish: your car needs fixing, you require a different color hair gel, and you must retrieve your uniform from your mom’s house. You can either wait for your car to be fixed before completing the rest of your tasks (synchronous processing) or leave it at the mechanic, handle other tasks, and have them notify you when it's done (asynchronous processing). Asynchronous processing enables you to accomplish more within the same timeframe, without unnecessary waiting.
+
+**Key Benefits:**
+1. **User Efficiency:**
+   - Users can continue their work while background processes handle time-consuming tasks, improving productivity.
+   - For example, complex calculations on custom objects triggered by Opportunity creation won't disrupt user workflow with asynchronous processing.
+
+2. **Scalability:**
+   - Asynchronous processing allows the platform to manage and scale resources efficiently, handling multiple jobs concurrently.
+   - It facilitates parallel processing, enhancing platform scalability.
+
+3. **Higher Limits:**
+   - Asynchronous processes operate in separate threads with elevated governor and execution limits, enhancing performance.
+   - Higher limits are desirable for resource-intensive operations.
+
+**Types of Asynchronous Apex:**
+
+| Type           | Overview                                                       | Common Scenarios                                        |
+|----------------|----------------------------------------------------------------|---------------------------------------------------------|
+| Future Methods | Execute in their own thread, starting when resources are free.  | Web service callouts.                                   |
+| Batch Apex     | Handle large jobs exceeding normal processing limits.           | Data cleansing, record archiving.                       |
+| Queueable Apex | Similar to future methods, with job chaining and complex data.  | Sequential processing with external web services.       |
+| Scheduled Apex | Scheduled to run at specified times (daily/weekly).             | Scheduled tasks, recurring processes.                   |
+
+**Note:**
+- Different asynchronous operations are not mutually exclusive.
+- Example: Triggering a Batch Apex job from a Scheduled Apex job is a common practice.
+
+**Increased Governor and Execution Limits**
+
+- Asynchronous Apex offers higher governor and execution limits compared to synchronous requests.
+- For instance, the number of SOQL queries doubles from 100 to 200 in asynchronous calls, and similar increases occur in total heap size and maximum CPU time.
+- These limits are independent of the synchronous request that queued the async request, providing more processing capability.
+- Useful when nearing governor limits in the current transaction, allowing continued processing asynchronously.
+
+**How Asynchronous Processing Works**
+
+1. **Challenges:**
+   - Ensure fairness of processing across customers.
+   - Guarantee fault tolerance to prevent loss of asynchronous requests.
+
+2. **Queue-Based Framework:**
+   - Requests are managed through a queue-based framework.
+   - Lifecycle:
+     - **Enqueue:** Requests are placed into the queue with appropriate data.
+     - **Persistence:** Enqueued requests are stored for failure recovery and transactional support.
+     - **Dequeue:** Requests are removed from the queue and processed, with transaction control ensuring no requests are lost if processing fails.
+
+3. **Handler Execution:**
+   - Each request is processed by a handler, which performs functions specific to the request type.
+   - Handlers run on finite worker threads on application servers within an instance.
+   - Threads request work from the queuing framework and execute specific handlers upon receiving it.
+
+4. **Resource Conservation:**
+   - Asynchronous processing has lower priority compared to real-time interaction.
+   - The queuing framework monitors system resources like server memory and CPU usage.
+   - It reduces asynchronous processing if resource thresholds are exceeded, ensuring fair resource allocation.
+   - No guarantee on processing time, but the system self-regulates to maintain equilibrium.
+
+**Note:**
+- For detailed information on heap sizes, maximum execution times, and limits, refer to "Execution Governors and Limits".
+
+## Notes on "User Future Methods"
+### **Future Apex**
+
+**Overview:**
+- Future Apex runs processes in a separate thread, deferring execution until system resources are available.
+- Identified by the `@future` annotation, commonly known as "future methods."
+
+**Usage:**
+- Future methods allow asynchronous execution, freeing up the main thread for other operations.
+- They offer higher governor and execution limits, enhancing performance.
+
+**Common Use Cases:**
+1. **Callouts to External Web Services:**
+   - Essential when making callouts from triggers or after DML operations.
+   - Prevents holding the database connection open, crucial in a multitenant environment.
+
+2. **Resource-Intensive Operations:**
+   - Suitable for tasks requiring significant processing power or calculations.
+   - Allows running operations in their own thread when system resources permit.
+
+3. **Isolating DML Operations:**
+   - Prevents mixed DML errors by executing DML operations on different sObject types separately.
+   - Addresses edge cases to ensure data integrity.
+
+**Note:**
+- Future methods provide a flexible approach to handle various asynchronous operations efficiently.
+- Reference "sObjects That Cannot Be Used Together in DML Operations" for detailed information on isolating DML operations.
+
+### **Future Method Syntax**
+
+- **Type:** Static methods.
+- **Return Type:** Void.
+- **Parameters:** Limited to primitive data types, arrays of primitives, or collections of primitives.
+- **Notable Restriction:** Cannot accept standard or custom objects as arguments.
+- **Common Practice:** Passing a List of record IDs for asynchronous processing.
+
+**Note:**
+- Passing objects as arguments is prohibited because object values can change between method call and execution, leading to potential errors.
+- Future methods execute when system resources become available, potentially resulting in outdated object values.
+
+```apex
+public class SomeClass {
+  @future
+  public static void someFutureMethod(List<Id> recordIds) {
+    List<Account> accounts = [Select Id, Name from Account Where Id IN :recordIds];
+    // process account records to do awesome stuff
+  }
+}
+```
+
+### **Sample Callout Code**
+
+To perform a Web service callout to an external service or API, you can create an Apex class with a future method marked with `(callout=true)`. Below is an example class with methods for making callouts synchronously and asynchronously where callouts aren't allowed. Additionally, a record is inserted into a custom log object (`SMS_Log__c`) to track the callout status.
+
+**Note:**
+- The `SmsMessage` class and `SMS_Log__c` sObject in the example are hypothetical and used for demonstrating the callout pattern.
+
+```java
+public class SMSUtils {
+    // Call async from triggers, etc, where callouts are not permitted.
+    @future(callout=true)
+    public static void sendSMSAsync(String fromNbr, String toNbr, String m) {
+        String results = sendSMS(fromNbr, toNbr, m);
+        System.debug(results);
+    }
+    // Call from controllers, etc, for immediate processing
+    public static String sendSMS(String fromNbr, String toNbr, String m) {
+        // Calling 'send' will result in a callout
+        String results = SmsMessage.send(fromNbr, toNbr, m);
+        insert new SMS_Log__c(to__c=toNbr, from__c=fromNbr, msg__c=results);
+        return results;
+    }
+}
+```
+
+**Note:**
+- The `sendSmsSync` method performs the callout synchronously.
+- The `sendSmsAsync` method is marked as a future method for asynchronous callouts.
+
+### **Test Classes**
+
+Testing future methods in Apex follows a slightly different approach compared to typical testing. To test future methods effectively:
+
+1. **Enclose Test Code:**
+   - Wrap your test code between the `startTest()` and `stopTest()` test methods.
+   - The system gathers all asynchronous calls made after `startTest()`.
+   - When `stopTest()` is executed, these collected asynchronous processes run synchronously.
+
+2. **Assert Results:**
+   - After `stopTest()`, you can assert that the asynchronous call operated correctly.
+
+**Note:**
+- Test code cannot send actual callouts to external systems. You need to 'mock' the callout for test coverage.
+- Refer to the Apex Integration Services module for comprehensive details on mocking callouts for testing.
+
+```apex
+@isTest
+public class SMSCalloutMock implements HttpCalloutMock {
+    public HttpResponse respond(HttpRequest req) {
+        // Create a fake response
+        HttpResponse res = new HttpResponse();
+        res.setHeader('Content-Type', 'application/json');
+        res.setBody('{"status":"success"}');
+        res.setStatusCode(200);
+        return res;
+    }
+}
+```
+
+### **Best Practices for Using Future Methods**
+
+1. **Avoid Large Number of Future Requests:**
+   - Each future method invocation adds a request to the asynchronous queue.
+   - Design patterns adding 2000+ requests over a short period may cause delays due to flow control.
+   - Ensure designs don't overwhelm the asynchronous queue.
+
+2. **Ensure Fast Execution:**
+   - Future methods should execute as quickly as possible to avoid delays.
+
+3. **Bundle Web Service Callouts:**
+   - If making Web service callouts, bundle them together in the same future method.
+   - Avoid using separate future methods for each callout.
+
+4. **Thorough Testing at Scale:**
+   - Test trigger enqueuing @future calls to handle 200-record collections.
+   - Determine potential delays with current and future volumes.
+
+5. **Consider Batch Apex:**
+   - Use Batch Apex for processing large numbers of records asynchronously.
+   - More efficient than creating individual future requests for each record.
+
+### **Things to Remember**
+
+1. **Static Methods with Void Return Type:**
+   - Methods with `@future` annotation must be static and return `void`.
+
+2. **Primitive Data Type Parameters Only:**
+   - Parameters limited to primitive data types, arrays, or collections of primitives.
+   - Objects cannot be passed as arguments.
+
+3. **Non-Deterministic Execution:**
+   - Future methods may not execute in the same order they're called.
+   - Concurrent execution of future methods can lead to record locking.
+
+4. **Restrictions in Visualforce:**
+   - Cannot use future methods in Visualforce controllers' `getMethodName()`, `setMethodName()`, or constructor.
+
+5. **No Nested Future Calls:**
+   - Cannot call a future method from within another future method.
+   - Trigger invoking a future method cannot be called within a future method.
+
+6. **Limitations on Certain Methods:**
+   - `getContent()` and `getContentAsPDF()` methods cannot be used in future methods.
+
+7. **Limits on Future Calls:**
+   - Limited to 50 future calls per Apex invocation, with additional limits within a 24-hour period.
+
+## Notes on "Use Batch Apex"
+
+### **Batch Apex**
+
+**Overview:**
+- Batch Apex is utilized for processing large jobs that exceed normal processing limits, such as thousands or millions of records.
+- It allows processing records asynchronously in batches, staying within platform limits.
+- Common use cases include data cleansing or archiving.
+
+**Functionality:**
+- Each time a batch class is invoked, the job is placed on the Apex job queue and executed as a discrete transaction.
+- Execution logic of the batch class is called once for each batch of records being processed.
+- Advantages:
+  1. Each transaction starts with new governor limits, ensuring code stays within execution limits.
+  2. If one batch fails, other successful batch transactions aren't rolled back.
+
+### **Batch Apex Syntax:**
+- To write a Batch Apex class:
+  - Implement the `Database.Batchable` interface.
+  - Include the following methods:
+    1. **start:**
+       - Collects records or objects to be processed.
+       - Called once at the beginning of a Batch Apex job.
+       - Returns either a `Database.QueryLocator` object or an `Iterable` containing records or objects.
+    2. **execute:**
+       - Performs actual processing for each batch of data.
+       - Default batch size is 200 records.
+       - Batches aren't guaranteed to execute in the order they're received from the start method.
+    3. **finish:**
+       - Executes post-processing operations after all batches are processed.
+
+### **Invoking a Batch Class**
+
+To invoke a batch class, follow these steps:
+
+1. **Instantiate Batch Class:**
+   - Create an instance of the batch class.
+
+```java
+MyBatchClass myBatchObject = new MyBatchClass();
+```
+
+2. **Execute Batch:**
+   - Call `Database.executeBatch` with the batch class instance.
+
+```java
+Id batchId = Database.executeBatch(myBatchObject);
+```
+
+3. **Optional: Specify Batch Size:**
+   - Optionally, specify the number of records passed into the `execute` method for each batch.
+
+```java
+Id batchId = Database.executeBatch(myBatchObject, 100);
+```
+
+**Note:**
+- Limiting batch size can help avoid hitting governor limits.
+
+**Tracking Job Progress:**
+- Each batch Apex invocation creates an `AsyncApexJob` record, allowing tracking of job progress.
+- Progress can be viewed via SOQL queries or managed in the Apex Job Queue.
+
+**Example Query:**
+
+```java
+AsyncApexJob job = [SELECT Id, Status, JobItemsProcessed, TotalJobItems, NumberOfErrors FROM AsyncApexJob WHERE ID = :batchId ];
+```
+
+**Using State in Batch Apex:**
+- Batch Apex classes can maintain state across transactions using instance member variables.
+- State can be helpful for passing information between batch job iterations.
+**Note:**
+- `QueryLocator` bypasses the governor limit for total records retrieved by SOQL queries, allowing querying up to 50 million records.
+- Governor limit for total records retrieved by SOQL queries is still enforced with an `Iterable`.
+- For complex scenarios, custom iterators can be explored.
+
+```apex
+public class MyBatchClass implements Database.Batchable<sObject> {
+    public (Database.QueryLocator | Iterable<sObject>) start(Database.BatchableContext bc) {
+        // collect the batches of records or objects to be passed to execute
+    }
+    public void execute(Database.BatchableContext bc, List<P> records){
+        // process each batch of records
+    }
+    public void finish(Database.BatchableContext bc){
+        // execute any post-processing operations
+    }
+}
+```
+
+### **Invoking a Batch Class**
+
+To invoke a batch class, follow these steps:
+
+1. **Instantiate Batch Class:**
+   - Create an instance of the batch class.
+
+```java
+MyBatchClass myBatchObject = new MyBatchClass();
+```
+
+2. **Execute Batch:**
+   - Call `Database.executeBatch` with the batch class instance.
+
+```java
+Id batchId = Database.executeBatch(myBatchObject);
+```
+
+3. **Optional: Specify Batch Size:**
+   - Optionally, specify the number of records passed into the `execute` method for each batch.
+
+```java
+Id batchId = Database.executeBatch(myBatchObject, 100);
+```
+
+**Note:**
+- Limiting batch size can help avoid hitting governor limits.
+
+**Tracking Job Progress:**
+- Each batch Apex invocation creates an `AsyncApexJob` record, allowing tracking of job progress.
+- Progress can be viewed via SOQL queries or managed in the Apex Job Queue.
+
+**Example Query:**
+
+```java
+AsyncApexJob job = [SELECT Id, Status, JobItemsProcessed, TotalJobItems, NumberOfErrors FROM AsyncApexJob WHERE ID = :batchId ];
+```
+
+### **Using State in Batch Apex**
+
+- By default, Batch Apex is stateless, treating each execution as a discrete transaction.
+- Each batch Apex job execution is considered separate transactions, even if processing the same set of records.
+- However, you can maintain state across all transactions by using `Database.Stateful` in the class definition.
+- With `Database.Stateful`, only instance member variables retain their values between transactions.
+- Maintaining state is useful for tasks like counting or summarizing records as they're processed.
+
+### **Sample Batch Apex Code**
+
+**Note:**
+- Finds all account records that are passed in by the start() method using a QueryLocator and updates the associated contacts with their account’s mailing address.
+- It sends off an email with the results of the bulk job and, since we are using Database.Stateful to track state, the number of records updated.
+- The start() method provides the collection of all records that the execute() method will process in individual batches. It returns the list of records to be processed by calling Database.getQueryLocator with a SOQL query. In this case we are simply querying for all Account records with a Billing Country of ‘USA’.
+- Each batch of 200 records is passed in the second parameter of the execute() method. The execute() method sets each contact’s mailing address to the accounts’ billing address and increments recordsProcessed to track the number of records processed.
+- When the job is complete, the finish method performs a query on the AsyncApexJob object (a table that lists information about batch jobs) to get the status of the job, the submitter’s email address, and some other information. It then sends a notification email to the job submitter that includes the job info and number of contacts updated.
+
+```apex
+public class UpdateContactAddresses implements
+    Database.Batchable<sObject>, Database.Stateful {
+    // instance member to retain state across transactions
+    public Integer recordsProcessed = 0;
+    public Database.QueryLocator start(Database.BatchableContext bc) {
+        return Database.getQueryLocator(
+            'SELECT ID, BillingStreet, BillingCity, BillingState, ' +
+            'BillingPostalCode, (SELECT ID, MailingStreet, MailingCity, ' +
+            'MailingState, MailingPostalCode FROM Contacts) FROM Account ' +
+            'Where BillingCountry = \'USA\''
+        );
+    }
+    public void execute(Database.BatchableContext bc, List<Account> scope){
+        // process each batch of records
+        List<Contact> contacts = new List<Contact>();
+        for (Account account : scope) {
+            for (Contact contact : account.contacts) {
+                contact.MailingStreet = account.BillingStreet;
+                contact.MailingCity = account.BillingCity;
+                contact.MailingState = account.BillingState;
+                contact.MailingPostalCode = account.BillingPostalCode;
+                // add contact to list to be updated
+                contacts.add(contact);
+                // increment the instance member counter
+                recordsProcessed = recordsProcessed + 1;
+            }
+        }
+        update contacts;
+    }
+    public void finish(Database.BatchableContext bc){
+        System.debug(recordsProcessed + ' records processed. Shazam!');
+        AsyncApexJob job = [SELECT Id, Status, NumberOfErrors,
+            JobItemsProcessed,
+            TotalJobItems, CreatedBy.Email
+            FROM AsyncApexJob
+            WHERE Id = :bc.getJobId()];
+        // call some utility to send email
+        EmailUtils.sendMessage(job, recordsProcessed);
+    }
+}
+```
+
+### **Testing Batch Apex**
+
+**Note:**
+- Insert some records
+- Call the Batch Apex class
+- Assert that the records were updated properly with the correct address
+- Make sure that the number of records inserted is less than or equal to the batch size of 200 because test methods can execute only one batch.
+- Ensure that the Iterable returned by the start() method matches the batch size.
+
+```apex
+@isTest
+private class UpdateContactAddressesTest {
+    @testSetup
+    static void setup() {
+        List<Account> accounts = new List<Account>();
+        List<Contact> contacts = new List<Contact>();
+        // insert 10 accounts
+        for (Integer i=0;i<10;i++) {
+            accounts.add(new Account(name='Account '+i,
+                billingcity='New York', billingcountry='USA'));
+        }
+        insert accounts;
+        // find the account just inserted. add contact for each
+        for (Account account : [select id from account]) {
+            contacts.add(new Contact(firstname='first',
+                lastname='last', accountId=account.id));
+        }
+        insert contacts;
+    }
+    @isTest static void test() {
+        Test.startTest();
+        UpdateContactAddresses uca = new UpdateContactAddresses();
+        Id batchId = Database.executeBatch(uca);
+        Test.stopTest();
+        // after the testing stops, assert records were updated properly
+        System.assertEquals(10, [select count() from contact where MailingCity = 'New York']);
+    }
+}
+```
+
+### **Best Practices for Batch Apex**
+
+When utilizing Batch Apex, it's crucial to adhere to best practices to ensure efficient and effective execution. Here are some key points to keep in mind:
+
+1. **Suitability of Batch Apex:**
+   - Use Batch Apex only when processing multiple batches of records.
+   - If you have insufficient records to generate multiple batches, consider Queueable Apex instead.
+
+2. **Optimize SOQL Queries:**
+   - Tune your SOQL queries to retrieve records quickly and efficiently.
+   - Optimize query performance to minimize execution time.
+
+3. **Minimize Asynchronous Requests:**
+   - Reduce the number of asynchronous requests created to minimize delays.
+   - Be mindful of resource consumption and governor limits.
+
+4. **Caution with Trigger Invocations:**
+   - Exercise caution when invoking a batch job from a trigger.
+   - Ensure that trigger actions won't exceed the batch job limit.
+   - Guarantee that trigger actions won't overwhelm the system with batch job requests.
+
+By following these best practices, you can maximize the efficiency and effectiveness of your Batch Apex jobs while minimizing potential issues and delays.
+
+## Notes on "Control Processes with Queueable Apex"
+
+### **Queueable Apex**
+
+Queueable Apex, introduced in Winter '15, combines the simplicity of future methods with the robustness of Batch Apex. It offers a streamlined class structure, non-primitive argument support, and monitoring capabilities, making it a versatile tool for asynchronous processing.
+
+**Key Features:**
+
+1. **Class Structure:**
+   - Queueable Apex provides a class structure that the platform serializes for execution.
+   - This structure eliminates the need for start and finish methods, simplifying development.
+
+2. **Non-Primitive Types:**
+   - Queueable classes can include member variables of non-primitive data types, such as sObjects or custom Apex types.
+   - These objects remain accessible during job execution, enhancing flexibility in processing.
+
+3. **Monitoring:**
+   - Upon submitting a job using `System.enqueueJob()`, the method returns the ID of the `AsyncApexJob` record.
+   - This ID enables job identification and progress monitoring through the Salesforce UI or programmatically via queries.
+
+4. **Chaining Jobs:**
+   - Queueable Apex supports chaining, allowing one job to trigger another job during execution.
+   - Chaining is beneficial for sequential processing scenarios, enhancing job orchestration and flexibility.
+
+**Benefits:**
+- **Flexibility:** Queueable Apex supports complex data types and chaining, accommodating diverse processing requirements.
+- **Visibility:** Monitoring capabilities provide insights into job progress, facilitating troubleshooting and optimization.
+- **Simplicity:** The streamlined class structure simplifies development and maintenance, improving code readability and efficiency.
+
+Queueable Apex stands as a versatile and powerful tool for asynchronous processing in Salesforce, offering developers enhanced capabilities and flexibility for handling complex business requirements.
+
+### **Queueable vs. Future Methods**
+
+**Queueable Apex:**
+- Functionally equivalent to future methods but offers additional features and flexibility.
+- Provides a streamlined class structure and supports non-primitive data types.
+- Allows chaining of jobs for sequential processing.
+- Ideal for most asynchronous processing needs due to its versatility and monitoring capabilities.
+
+**Future Methods:**
+- Simple and straightforward for basic asynchronous processing.
+- May be preferable in scenarios where functionality is sometimes executed synchronously and sometimes asynchronously.
+- Easy to refactor from synchronous to asynchronous execution when needed.
+
+**Considerations:**
+- **Refactoring Existing Code:**
+  - It may not be necessary to refactor all future methods to queueable immediately.
+  - Refactoring to queueable may offer additional benefits but requires more effort.
+
+- **Synchronous and Asynchronous Execution:**
+  - Future methods are suitable when functionality needs to be executed synchronously or asynchronously based on requirements.
+  - They offer flexibility in transitioning between synchronous and asynchronous execution.
+
+**Conclusion:**
+- While queueable methods offer more features and flexibility, including monitoring and chaining, future methods remain valuable, especially in scenarios where synchronous and asynchronous execution coexist.
+- Consider the specific requirements of your application when choosing between queueable and future methods, and refactor existing code as needed to align with your long-term goals and performance considerations.
+
+### **Queueable Syntax**
+
+**Note:**
+- To use Queueable Apex, simply implement the Queueable interface.
+
+```apex
+public class SomeClass implements Queueable {
+    public void execute(QueueableContext context) {
+        // awesome code here
+    }
+}
+```
+```apex
+public class UpdateParentAccount implements Queueable {
+    private List<Account> accounts;
+    private ID parent;
+    public UpdateParentAccount(List<Account> records, ID id) {
+        this.accounts = records;
+        this.parent = id;
+    }
+    public void execute(QueueableContext context) {
+        for (Account account : accounts) {
+          account.parentId = parent;
+          // perform other processing or callout
+        }
+        update accounts;
+    }
+}
+```
+
+### **Testing Queueable Apex**
+
+Testing Queueable apex is very similar to testing batch apex testing.
+
+```apex
+@isTest
+public class UpdateParentAccountTest {
+    @testSetup
+    static void setup() {
+        List<Account> accounts = new List<Account>();
+        // add a parent account
+        accounts.add(new Account(name='Parent'));
+        // add 100 child accounts
+        for (Integer i = 0; i < 100; i++) {
+            accounts.add(new Account(
+                name='Test Account'+i
+            ));
+        }
+        insert accounts;
+    }
+    static testmethod void testQueueable() {
+        // query for test data to pass to queueable class
+        Id parentId = [select id from account where name = 'Parent'][0].Id;
+        List<Account> accounts = [select id, name from account where name like 'Test Account%'];
+        // Create our Queueable instance
+        UpdateParentAccount updater = new UpdateParentAccount(accounts, parentId);
+        // startTest/stopTest block to force async processes to run
+        Test.startTest();
+        System.enqueueJob(updater);
+        Test.stopTest();
+        // Validate the job ran. Check if record have correct parentId now
+        System.assertEquals(100, [select count() from account where parentId = :parentId]);
+    }
+}
+```
+
+### **Chaining Jobs**
+- Queuable Apex allows for job chaining that allows jobs to be run sequentially. In order to chain a job to another one, simply submit the second job in the `execute()` method of the first job.
+
+```apex
+public class FirstJob implements Queueable {
+    public void execute(QueueableContext context) {
+        // Awesome processing logic here
+        // Chain this job to next job by submitting the next job
+        System.enqueueJob(new SecondJob());
+    }
+}
+```
+
+### **Testing Chained Jobs**
+- Has a slightly different pattern.
+- can’t chain queueable jobs in an Apex test and will result in an error
+-  To avoid nasty errors, you can check if Apex is running in test context by calling Test.isRunningTest() before chaining jobs.
+
+### **Things to Remember with Queueable Apex:**
+
+1. **Shared Limit:**
+   - The execution of a queued job counts once against the shared limit for asynchronous Apex method executions.
+  
+2. **Limitations on Queueable Jobs:**
+   - You can add up to 50 jobs to the queue with `System.enqueueJob` in a single transaction.
+
+3. **Job Chaining:**
+   - When chaining jobs, you can add only one job from an executing job with `System.enqueueJob`, meaning that only one child job can exist for each parent queueable job.
+   - Starting multiple child jobs from the same queueable job is not permitted.
+
+4. **Depth of Chained Jobs:**
+   - There is no limit enforced on the depth of chained jobs, allowing you to chain one job to another indefinitely.
+   - However, for Developer Edition and Trial orgs, the maximum stack depth for chained jobs is 5. This means you can chain jobs four times, and the maximum number of jobs in the chain is 5, including the initial parent queueable job.
+
+### **Conclusion:**
+Queueable Apex offers powerful capabilities for asynchronous processing, but it's essential to be mindful of its limitations and considerations to ensure efficient and effective job execution. Understanding these aspects will help you leverage Queueable Apex effectively in your Salesforce development.
+
+## Notes on "Schedule Jobs Using the Apex Scheduler"
+
+### **Scheduled Apex**
+
+Scheduled Apex allows you to defer the execution of Apex classes to specific times, making it ideal for automating daily or weekly maintenance tasks using Batch Apex. Here's how you can implement and schedule Scheduled Apex:
+
+### **Scheduled Apex Syntax:**
+```java
+public class SomeClass implements Schedulable {
+    public void execute(SchedulableContext ctx) {
+        // Your logic here
+    }
+}
+```
+
+**Explanation:**
+- Implement the `Schedulable` interface in your Apex class.
+- Define the `execute` method within the class. This method contains the logic that you want to execute at the scheduled time.
+- The `execute` method accepts a `SchedulableContext` parameter, allowing you to access context information about the scheduled job.
+
+### **Scheduling:**
+To schedule the execution of your Apex class, you'll use the `System.schedule()` method. Here's an example of how to schedule the `SomeClass` for execution:
+
+```java
+String jobId = System.schedule('Scheduled Job Name', '0 0 0 * * ?', new SomeClass());
+```
+
+- The first parameter is the name of the scheduled job.
+- The second parameter is a cron expression specifying when the job should run. In this example, `0 0 0 * * ?` represents midnight every day.
+- The third parameter is an instance of your Apex class.
+
+### **Sample Code**
+This class queries for open opportunities that should have closed by the current date, and creates a task on each one to remind the owner to update the opportunity.
+
+```apex
+public class RemindOpptyOwners implements Schedulable {
+    public void execute(SchedulableContext ctx) {
+        List<Opportunity> opptys = [SELECT Id, Name, OwnerId, CloseDate
+            FROM Opportunity
+            WHERE IsClosed = False AND
+            CloseDate < TODAY];
+        // Create a task for each opportunity in the list
+        TaskUtils.remindOwners(opptys);
+    }
+}
+```
+
+### **Using the System.Schedule Method**
+
+After implementing a class with the `Schedulable` interface, you can use the `System.schedule()` method to execute it. Here's how to use the `System.schedule()` method effectively:
+
+1. **Method Overview:**
+   - `System.schedule()` schedules the execution of a class implementing the `Schedulable` interface.
+
+2. **Method Signature:**
+   ```java
+   String jobID = System.schedule(String jobName, String cronExpression, Schedulable schedulableInstance);
+   ```
+   - `jobName`: A unique name for the scheduled job.
+   - `cronExpression`: A CRON expression representing the time and date the job is scheduled to run.
+   - `schedulableInstance`: An instance of a class implementing the `Schedulable` interface.
+
+3. **Usage Example:**
+   ```java
+   RemindOpptyOwners reminder = new RemindOpptyOwners();
+   String cronExpression = '20 30 8 10 2 ?'; // Seconds Minutes Hours Day_of_month Month Day_of_week optional_year
+   String jobID = System.schedule('Remind Opp Owners', cronExpression, reminder);
+   ```
+
+4. **CRON Expression:**
+   - The CRON expression defines the schedule for the job. It specifies when the job should run in terms of seconds, minutes, hours, days, months, and days of the week.
+   - For more information on CRON expressions, refer to the "Using the System.Schedule Method" section in the Apex Scheduler documentation.
+
+### **Scheduling a Job from the UI:**
+You can also schedule a class using the Salesforce user interface:
+1. Navigate to Setup and enter "Apex" in the Quick Find box.
+2. Select "Apex Classes" and click on "Schedule Apex".
+3. Enter a job name and select the desired Apex class.
+4. Choose the frequency (weekly or monthly) and set the start and end dates, along with the preferred start time.
+5. Click "Save".
+
+**Note:**
+- Be cautious when scheduling a class from a trigger to avoid exceeding the limit on scheduled job classes.
+- Ensure proper permissions for executing the scheduled class, as it runs in system mode.
+
+### **Testing Scheduled Apex**
+- Just like with the other async methods we’ve covered so far, with Scheduled Apex you must also ensure that the scheduled job is finished before testing against the results.
+- To do this, use startTest() and stopTest() again around the System.schedule() method, to ensure processing finishes before continuing your test.
+
+```apex
+@IsTest
+private class RemindOppyOwnersTest {
+    // Dummy CRON expression: midnight on March 15.
+    // Because this is a test, job executes
+    // immediately after Test.stopTest().
+    public static String CRON_EXP = '0 0 0 15 3 ? 2042';
+    @IsTest
+    static void testScheduledJob() {
+        // Create some out of date Opportunity records
+        List<Opportunity> opptys = new List<Opportunity>();
+        Date closeDate = Date.today().addDays(-7);
+        for (Integer i=0; i<10; i++) {
+            Opportunity o = new Opportunity(
+                Name = 'Opportunity ' + i,
+                CloseDate = closeDate,
+                StageName = 'Prospecting'
+            );
+            opptys.add(o);
+        }
+        insert opptys;
+        // Get the IDs of the opportunities we just inserted
+        Map<Id, Opportunity> opptyMap = new Map<Id, Opportunity>(opptys);
+        List<Id> opptyIds = new List<Id>(opptyMap.keySet());
+        Test.startTest();
+        // Schedule the test job
+        String jobId = System.schedule('ScheduledApexTest',
+            CRON_EXP,
+            new RemindOpptyOwners());
+        // Verify the scheduled job has not run yet.
+        List<Task> lt = [SELECT Id
+            FROM Task
+            WHERE WhatId IN :opptyIds];
+        System.assertEquals(0, lt.size(), 'Tasks exist before job has run');
+        // Stopping the test will run the job synchronously
+        Test.stopTest();
+        // Now that the scheduled job has executed,
+        // check that our tasks were created
+        lt = [SELECT Id
+            FROM Task
+            WHERE WhatId IN :opptyIds];
+        System.assertEquals(opptyIds.size(),
+            lt.size(),
+            'Tasks were not created');
+    }
+}
+```
+
+### **Things to Remember**
+
+Scheduled Apex comes with several considerations to keep in mind:
+
+1. **Limits:**
+   - You can only have a maximum of 100 scheduled Apex jobs at one time.
+   - There are limits on the maximum number of scheduled Apex executions per 24-hour period. Refer to "Execution Governors and Limits" in the Resources section for detailed information.
+
+2. **Trigger Caution:**
+   - Be cautious when scheduling a class from a trigger. Ensure that the trigger won't exceed the limit on scheduled jobs.
+
+3. **Web Service Callouts:**
+   - Synchronous Web service callouts are not supported from scheduled Apex.
+   - To perform callouts, use asynchronous callouts by annotating a method with `@future(callout=true)` and call this method from scheduled Apex.
+   - However, if your scheduled Apex executes a batch job, callouts are supported from the batch class.
+
+## Notes on "Monitor Asynchronous Apex"
+
+### **Monitoring Asynchronous Jobs**
+
+Async jobs operate quietly in the background, but monitoring them is essential for managing your processes effectively. Here are a few methods to keep an eye on your asynchronous jobs:
+
+1. **Salesforce User Interface:**
+   - Navigate to Setup and enter "Jobs" in the Quick Find box.
+   - Select "Apex Jobs" to access the Apex Jobs page.
+   - This page displays all asynchronous Apex jobs along with execution details.
+
+2. **Apex Jobs Page:**
+   - The Apex Jobs page provides information about each job's execution status.
+   - You can view details such as job ID, job type (e.g., future method, batch job), start time, end time, and status.
+
+3. **Apex Jobs Screenshot:**
+   - Below is an example screenshot showing one future method job and two completed batch jobs for the same Batch Apex class.
+   
+   ![ApexJobsMonitoring-0](https://github.com/jeudy100/PlatformDeveloperNotes/assets/19577027/73ae73ef-4cbd-48f1-a846-dbaf6a9cc811)
+  
+4. **Apex Batch Jobs Screenshot:**
+   To access the Apex Batch Jobs page, follow these steps:
+    - Navigate to the Apex Jobs page by entering "Jobs" in the Quick Find box in Setup and selecting "Apex Jobs."
+    - At the top of the Apex Jobs page, click on the link labeled "Apex Batch Jobs."
+    - Once on the Apex Batch Jobs page, you can use the slider to select a specific date range, allowing you to narrow down the list of batch jobs displayed. This feature enables you to view batch jobs executed within a particular timeframe.
+     - Furthermore, on the Batch Jobs page, jobs are grouped by the batch class, providing a structured overview of batch jobs based on their respective classes. This organization facilitates easier navigation and management of batch jobs.
+     - Click More Info next to a class ID you’re interested in to find out details about the jobs executed for that class.
+
+### **Monitoring Future Jobs**
+Monitoring future jobs requires some additional steps due to their unique characteristics. Here's how you can track future jobs:
+
+1. **Apex Jobs Page:**
+   - Future jobs appear on the Apex Jobs page alongside other types of asynchronous jobs.
+   - Navigate to Setup, enter "Jobs" in the Quick Find box, and select "Apex Jobs."
+   - Look for future jobs in the list displayed on this page.
+
+2. **Querying AsyncApexJob:**
+   - Since future jobs do not return an ID upon initiation, querying the AsyncApexJob object is necessary to find them.
+   - You can filter the AsyncApexJob records based on fields like MethodName or JobType to identify future jobs.
+   - Refer to sample SOQL queries available in resources like Stack Exchange to construct your query effectively.
+
+**Note:** Future jobs are not currently part of the flex queue. Therefore, querying the AsyncApexJob object is the primary method to find and monitor future jobs.
+
+### **Monitoring Queued Jobs with SOQL**
+
+To query information about a queued job, you can use SOQL to retrieve details from the AsyncApexJob object. Here's an example of how to perform a SOQL query to obtain information about a submitted job:
+
+```apex
+AsyncApexJob jobInfo = [SELECT Status, NumberOfErrors
+                        FROM AsyncApexJob 
+                        WHERE Id = :jobID];
+```
+
+In this query:
+- `AsyncApexJob` is the object representing asynchronous Apex jobs.
+- `Status` and `NumberOfErrors` are fields that provide information about the job's execution status and any errors encountered.
+- `WHERE Id = :jobID` filters the query results based on the specific job ID returned by the `System.enqueueJob()` method.
+
+After executing this query, the `jobInfo` variable will contain details about the queued job, such as its current status and the number of errors, allowing you to monitor its progress and troubleshoot any issues as needed.
+
+### **Monitoring Queue Jobs with the Flex Queue**
+The Apex Flex queue manages the submission and execution of batch jobs, allowing up to 100 batch jobs to be in holding status. Here's how it works:
+
+1. **Submitting Jobs**: When batch jobs are submitted for execution, they are initially placed in holding status and added to the Apex Flex queue. Up to 100 batch jobs can be in holding status at a time.
+
+2. **Processing Order**: Jobs in the Apex Flex queue are processed in a first-in, first-out (FIFO) order, based on the order in which they were submitted.
+
+3. **Resource Availability**: As system resources become available, the system picks up the next job from the top of the Apex Flex queue and moves it to the batch job queue for execution. The system can process up to five queued or active jobs simultaneously for each organization.
+
+4. **Status Update**: The status of jobs moved from holding status to the batch job queue changes from "Holding" to "Queued". Queued jobs are executed when the system is ready to process new jobs.
+
+5. **Monitoring**: You can monitor queued jobs, as well as active and completed jobs, in the Apex Jobs page.
+
+### **Monitoring Scheduled Jobs**
+For scheduled jobs, you can obtain additional information by querying the `CronTrigger` object. Here's how you can do it:
+
+```apex
+CronTrigger ct = [SELECT TimesTriggered, NextFireTime FROM CronTrigger WHERE Id = :jobID];
+```
+
+If you're querying from within the execute method of your schedulable class, you can obtain the ID of the current job by calling `getTriggerId()` on the `SchedulableContext` argument variable.
+
+Additionally, you can retrieve the job's name and type from the `CronJobDetail` record associated with the `CronTrigger` record. Here's how you can query it:
+
+```apex
+CronTrigger job = [SELECT Id, CronJobDetail.Id, CronJobDetail.Name, CronJobDetail.JobType FROM CronTrigger ORDER BY CreatedDate DESC LIMIT 1];
+```
+
+You can also directly query `CronJobDetail` to get the job's name and type:
+
+```apex
+CronJobDetail ctd = [SELECT Id, Name, JobType FROM CronJobDetail WHERE Id = :job.CronJobDetail.Id];
+```
+
+Finally, to obtain the total count of all Apex scheduled jobs, you can perform the following query:
+
+```apex
+SELECT COUNT() FROM CronTrigger WHERE CronJobDetail.JobType = '7'
+```
+
+This query retrieves the count of all scheduled Apex jobs, excluding other scheduled job types.
+
+## Notes on "Visualforce Basics"
+Visualforce is a web development framework that enables developers to build sophisticated, custom user interfaces for mobile and desktop apps that can be hosted on the Lightning Platform.
+
+You can display Visualforce pages:
+- Open a Visualforce Page from the App Launcher
+- Add a Visualforce Page to the Navigation Bar
+- Display a Visualforce Page within a Standard Page Layout
+- Add a Visualforce Page as a Component in the Lightning App Builder
+- Launch a Visualforce Page as a Quick Action
+- Display a Visualforce Page by Overriding Standard Buttons or Links
+- Display a Visualforce Page Using Custom Buttons or Links
+
+## Notes on "Use Simple Variables and Formulas"
+### **Global Variables:**
+- Access and display system values and resources in Visualforce markup.
+- Example: Use $User global variable for logged-in user info: {! $User.FirstName }.
+
+### **Formula Expressions:**
+- Combine global variables and formulas for dynamic content manipulation.
+- Example: Concatenate first and last name: {! $User.FirstName & ' ' & $User.LastName }.
+
+### **Function Usage:**
+- Functions are built-in calculations identifiable by parentheses after their name.
+- Example Functions:
+  - TODAY(): Get current date.
+  - DAY(): Extract day from a date.
+  - MAX(): Find maximum among given values.
+  - SQRT(): Calculate square root.
+  - CONTAINS(): Check if one string contains another.
+  - YEAR(): Extract year from a date.
+
+### **Conditional Expressions:**
+- Use conditional expressions like IF() to display content based on conditions.
+- IF() Syntax:
+  - First argument: Boolean condition.
+  - Second argument: Value if condition is true.
+  - Third argument: Value if condition is false.
+- Example:
+  - Display "Yep" if 'force.com' is contained within 'salesforce.com', else "Nope".
+  - Display "Before the 15th" if today's date is before the 15th, else "The 15th or after".
+
+## Notes on "Use Standard Controllers"
+
+**Notes on the Visualforce Standard Controller**
+
+**Introduction:**
+- Visualforce follows the MVC paradigm for separating view, logic, and data.
+- Standard controllers provided by Visualforce handle standard actions and data access, facilitating integration with the Lightning Platform database.
+
+**MVC Design Pattern:**
+- View (Visualforce page) interacts with controller, which provides functionality.
+- Controller interacts with model (database), making data available to view and managing changes.
+
+**Standard Controllers:**
+- Most standard and custom objects have standard controllers.
+- Standard controllers can be extended for additional functionality or custom controllers can be created from scratch.
+- Specify the standard controllers in the <apex:page> tag
+
+**Record Identification:**
+- To use a standard controller with a specific record, provide its record identifier (ID) in the request URL.
+- ID is necessary for data retrieval and saving changes to the database.
+
+**Displaying Data from a Single Record:**
+- Include standard controller attribute in Visualforce page markup: `standardController="ObjectName"`.
+- Fields from the record can be referenced in the page using syntax like `{! ObjectName.FieldName }`.
+- Example: `{! Account.Name }`, `{! Account.Phone }`, etc.
+
+## Notes on "Display Records, Fields, and Tables"
+### **Introduction to Output Components**
+
+- Visualforce offers approximately 150 built-in components for page development.
+- Components are translated into HTML, CSS, and JavaScript upon page request.
+- Components are categorized into coarse-grained (providing significant functionality) and fine-grained (focused functionality) types.
+
+### **Output Components Overview:**
+- Output components display data from records, enabling the creation of view-only interfaces.
+
+### **Creating a Visualforce Page with a Standard Controller:**
+- Utilize output components with a standard controller to access and display record details.
+- Example: Create a Visualforce page named AccountDetail with {! Account.Name }.
+
+**Displaying Record Details:**
+- Use `<apex:detail>` to quickly incorporate record details on a page.
+- `<apex:detail>` is a coarse-grained component that reproduces the standard view page for an object.
+
+### **Displaying Related Lists:**
+- Employ `<apex:relatedList>` to display lists of records related to the current record.
+- Related lists are collections of similar data elements associated with the current record.
+- Customize related lists independently using attributes on `<apex:relatedList>`.
+
+```apex
+<apex:relatedList list="Opportunities" pageSize="5"/><apex:relatedList list="Contacts"/>
+```
+
+### **Displaying Individual Fields:**
+- Utilize `<apex:outputField>` to display individual fields from a record.
+- When wrapped within `<apex:pageBlock>` and `<apex:pageBlockSection>`, `<apex:outputField>` adopts platform styling and formatting.
+
+```apex
+<apex:pageBlock title="Account Details">
+    <apex:pageBlockSection>
+        <apex:outputField value="{! Account.Name }"/>
+        <apex:outputField value="{! Account.Phone }"/>
+        <apex:outputField value="{! Account.Industry }"/>
+        <apex:outputField value="{! Account.AnnualRevenue }"/>
+    </apex:pageBlockSection>
+</apex:pageBlock>
+```
+
+### **Displaying a Table:**
+- Employ `<apex:pageBlockTable>` to add a table of data to a page.
+- `<apex:pageBlockTable>` is an iteration component generating a table with platform styling.
+- Use value attribute to specify the data source and var attribute to define a variable for iteration.
+
+```apex
+<apex:pageBlock title="Contacts">
+   <apex:pageBlockTable value="{!Account.contacts}" var="contact">
+      <apex:column value="{!contact.Name}"/>
+      <apex:column value="{!contact.Title}"/>
+      <apex:column value="{!contact.Phone}"/>
+   </apex:pageBlockTable>
+</apex:pageBlock>
+```
+
+### **Further Exploration:**
+- Coarse-grained components offer extensive functionality, while fine-grained components provide more control over page details.
+- Explore `<apex:enhancedList>`, `<apex:listViews>`, and other components for varied functionality.
+- Experiment with iteration components like `<apex:dataTable>`, `<apex:dataList>`, and `<apex:repeat>` for diverse data presentation options.
+
+## Notes on "Input Data Using Forms"
+
+**Introduction to Visualforce Forms**
+
+- Visualforce facilitates the creation of pages for data creation and editing.
+- The combination of standard controller, `<apex:form>`, and form elements allows easy creation of record editing pages.
+- Key aspects of such a form include record lookup, data presentation, form submission, validation, and message display.
+
+**Creating a Basic Form:**
+- Utilize `<apex:form>` and `<apex:inputField>` to create a basic data editing page.
+- Employ `<apex:commandButton>` with the save action to save changes to a record or create a new one.
+
+**Add Field Labels and Platform Styling:**
+- Organize form elements within `<apex:pageBlock>` and `<apex:pageBlockSection>` for platform styling and grouping.
+- Utilize `<apex:inputField>` to render input widgets based on field types with respect to field metadata.
+
+**Display Form Errors and Messages:**
+- Use `<apex:pageMessages>` to display form handling errors or messages.
+- Messages provide feedback on validation errors or other issues during form submission.
+
+**Edit Related Records:**
+- Enable users to edit related information by providing links to related records.
+- Utilize `<apex:outputLink>` within `<apex:pageBlockTable>` to offer actions like edit or delete on related records.
+
+**Further Exploration:**
+- Explore other input components beyond `<apex:inputField>` for varied data input scenarios.
+- Investigate standard actions provided by the standard controller for core functionalities.
+- Consider custom controller code for complex actions like creating new related records requiring relationship establishment.
+
+```apex
+<apex:page standardController=”Account”>
+	<apex:form>
+		<apex:pageBlock title=”Edit Account”>
+			<apex:pageBlockSection>
+				<apex:inputField value=”{! Account.Name }”/>
+			</apex:pageBlockSection>
+			<apex:pageBlockButtons>
+				<apex:commandButton action=”{! save }” value=”Save” />
+			</apex:pageBlockButtons>
+		</apex:pageBlock>
+	</apex:form>
+</apex:page>
+```
+
+```apex
+<apex:pageBlockSection columns="1">
+    <apex:inputField value="{! Account.Name }"/>
+    <apex:inputField value="{! Account.Phone }"/>
+    <apex:inputField value="{! Account.Industry }"/>
+    <apex:inputField value="{! Account.AnnualRevenue }"/>
+</apex:pageBlockSection>
+```
+
+```apex
+<apex:pageBlock title="Contacts">
+    <apex:pageBlockTable value="{!Account.contacts}" var="contact">
+        <apex:column>
+            <apex:outputLink
+                value="{! URLFOR($Action.Contact.Edit, contact.Id) }">
+                Edit
+            </apex:outputLink>
+            <apex:outputLink
+                value="{! URLFOR($Action.Contact.Delete, contact.Id) }">
+                Del
+            </apex:outputLink>
+        </apex:column>
+        <apex:column value="{!contact.Name}"/>
+        <apex:column value="{!contact.Title}"/>
+        <apex:column value="{!contact.Phone}"/>
+    </apex:pageBlockTable>
+</apex:pageBlock>
+```
+
+## Notes on "Use Static Resources"
+
+Here's an overview of static resources and how to use them effectively in Visualforce:
+
+### **Static Resources Overview:**
+- **Definition:** Static resources are files that you can upload to Salesforce and reference in Visualforce pages. These files include archives (e.g., .zip, .jar), images, stylesheets, JavaScript, and more.
+- **Managed Distribution:** Salesforce Lightning Platform acts as a content distribution network (CDN) for static resources, handling caching and distribution automatically.
+- **Global Variable:** Static resources are referenced using the `$Resource` global variable, which can be used directly in Visualforce expressions or as a parameter in functions like `URLFOR()`.
+
+### **Creating and Uploading Simple Static Resources:**
+1. **Create Resource:** Download the desired content (e.g., jQuery library) and upload it as a static resource from Setup > Static Resources.
+2. **Usage:** Reference the static resource in Visualforce using the `$Resource` global variable (e.g., `{!$Resource.jQuery}`).
+
+### **Adding Static Resources to Visualforce Pages:**
+- Use Visualforce tags like `<apex:includeScript>` or `<apex:stylesheet>` to include static resources in your page's markup.
+- For example, you can include jQuery in your Visualforce page using:
+  ```html
+  <apex:includeScript value="{!$Resource.jQuery}"/>
+  ```
+
+### **Creating and Uploading Zipped Static Resources:**
+1. **Create Zip File:** Group related files into a zip archive.
+2. **Upload:** Upload the zip file as a static resource.
+3. **Usage:** Reference individual files within the zipped resource using `URLFOR()` along with the static resource name.
+   ```html
+   {! URLFOR($Resource.ResourceName, 'path/to/file.js')}
+   ```
+## Notes on "Create & Use Custom Controllers"
+
+Here's a breakdown of how to create and utilize custom controllers in Visualforce:
+
+### **Introduction to Custom Controllers:**
+- **Purpose:** Custom controllers in Visualforce allow you to define custom logic and data manipulation for your pages.
+- **Functionality:** They can retrieve data, make callouts to external services, validate and insert data, and more.
+- **Role in MVC:** Controllers play a crucial role in the Model-View-Controller (MVC) design pattern, where they retrieve data to be displayed and handle page actions.
+
+### **Creating a Visualforce Page with a Custom Controller:**
+1. **Page Creation:** Create a new Visualforce page and specify the custom controller class in the `controller` attribute of the `<apex:page>` tag.
+2. **Initial Markup:** Replace placeholder markup with basic structure.
+3. **Error Handling:** Initially, errors may occur if the controller class doesn't exist yet.
+
+### **Creating a Custom Controller Apex Class:**
+1. **Class Creation:** Create a new Apex class in the Developer Console.
+2. **Basic Structure:** Define the class with the desired name, leaving the body empty initially.
+3. **Error Handling:** Save the class to resolve errors in the Visualforce page.
+
+### **Adding Methods to Retrieve Records:**
+1. **Getter Method:** Create a method in the custom controller to retrieve records.
+2. **SOQL Query:** Use SOQL to query records from the database.
+3. **Return Results:** Make the retrieved records available to the Visualforce page by returning them from the method.
+
+### **Adding Action Methods:**
+1. **Custom Actions:** Define action methods in the custom controller to respond to user interactions.
+2. **Logic Implementation:** Implement logic in action methods to perform specific actions, such as sorting records.
+3. **Markup Integration:** Integrate action methods with Visualforce markup using components like `<apex:commandLink>` to trigger actions.
+
+### **Finalizing the Visualforce Page:**
+1. **Markup Enhancement:** Enhance the Visualforce page markup to include interactive components like clickable headers.
+2. **Method Invocation:** Connect action methods to interactive components to enable user interaction.
+3. **Testing:** Preview the page to ensure functionality and verify that actions trigger expected behaviors.
+
+### **Beyond the Basics:**
+- **Localization:** Utilize dynamic references to field labels for multilingual support.
+- **Apex Properties:** Explore the use of properties as an alternative to getter and setter methods for enhanced readability and functionality.
+- **Lifecycle Considerations:** Understand the lifecycle of Visualforce requests and responses to avoid dependencies between controller methods.
+
+```apex
+<apex:page controller="ContactsListWithController">
+    <apex:form>
+        <apex:pageBlock title="Contacts List" id="contacts_list">
+            <!-- Contacts List goes here -->
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>
+```
+
+```apex
+public class ContactsListWithController {
+	private String sortOrder = 'LastName';
+	public List<Contact> getContacts() {
+	    List<Contact> results = Database.query(
+	        'SELECT Id, FirstName, LastName, Title, Email ' +
+	        'FROM Contact ' +
+	        'ORDER BY ' + sortOrder + ' ASC ' +
+	        'LIMIT 10'
+	    );
+	    return results;
+	}
+}
+```
+
