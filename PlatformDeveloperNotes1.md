@@ -3923,4 +3923,839 @@ public class ContactsListWithController {
 	}
 }
 ```
+# Notes on "Lightning Web Components Basics"
+## Discover Lightning Web Components
 
+### Learning Objectives
+- Explain the Lightning Web Components programming model.
+- List the benefits of using Lightning web components.
+- Find what you need to get started developing Lightning web components.
+
+### An Open Door to Programming with Web Standards
+- Combines Salesforce knowledge with standard technologies like HTML, JavaScript, and CSS.
+- Maintains compatibility with existing Aura components.
+
+**Note**:
+- Lightning Web Components programming model capitalizes all words.
+- Components are referred to as Lightning web components.
+
+### Before You Go Further
+- Requires basic understanding of Salesforce DX projects and Salesforce CLI.
+- Utilize properly configured org in Trailhead account and VS Code with Salesforce Extension Pack.
+- Quick Start: Lightning Web Components provides necessary information.
+
+### Why Lightning Web Components?
+- Utilizes modern browser standards.
+- Lightweight and delivers exceptional performance.
+- Easier to find solutions, developers, and experiences.
+- Faster development.
+- Provides full encapsulation for versatility.
+
+### Simple Component Creation
+- Components created using HTML, JavaScript, and CSS.
+- Creation involves (1) JavaScript file, (2) HTML file, and optionally (3) CSS file.
+- HTML provides structure, JavaScript defines logic, and CSS provides appearance.
+
+### Example:
+HTML:
+```html
+<template>
+  <input value={message}></input>
+</template>
+```
+
+JavaScript:
+```javascript
+import { LightningElement } from 'lwc'; 
+export default class App extends LightningElement { 
+  message = 'Hello World'; 
+}
+```
+
+CSS:
+```css
+input {
+  color: blue;
+}
+```
+
+### Lightning Web Components and Aura Components Do Work Together
+- Lightning web components can coexist with existing Aura components.
+- Aura components can contain Lightning web components.
+- Full encapsulation and adherence to common standards provided by Lightning web components.
+
+### Cool Stuff You Can Use
+
+To develop Lightning web components efficiently, use the following tools and environments.
+
+**Dev Hub and Scratch Orgs**
+- **Scratch Orgs:** Disposable Salesforce orgs for development and testing.
+- **Dev Hub:** Manages scratch orgs, part of Salesforce DX tool set.
+
+**Salesforce Command Line Interface (CLI)**
+- Provides quick operations for creating, configuring scratch orgs, and deploying components.
+- Part of Salesforce DX tool set.
+
+**Lightning Component Library**
+- Reference for Aura and Lightning web components: [Component Library](https://developer.salesforce.com/docs/component-library/overview/components).
+- View through org's instance: [Instance Library](http://<MyDomainName>.lightning.force.com/docs/component-library).
+- Custom components appear in the library.
+
+**GitHub**
+- Share extensions, samples, and more through GitHub repos.
+- Get a GitHub account to access offerings.
+
+**Visual Studio Code Salesforce Extension Pack**
+- Provides code-hinting, lint warnings, and built-in commands.
+- [Salesforce Extension Pack](https://marketplace.visualstudio.com/items?itemName=salesforce.salesforcedx-vscode).
+
+**Lightning Web Components Recipes**
+- GitHub repo with mix of samples to understand how Lightning web components work.
+- Clone, tinker, and publish to your own scratch org: [LWC Recipes](https://github.com/trailheadapps/lwc-recipes).
+
+**E-Bikes Demo**
+- GitHub repo demonstrating end-to-end implementation of Lightning web components to create an app.
+- Try in your own scratch org: [E-Bikes Demo](https://github.com/trailheadapps/ebikes-lwc).
+
+**Lightning Data Service (LDS)**
+- Access data and metadata from Salesforce via Lightning Data Service.
+- Base Lightning components working with data are built on LDS.
+
+**Lightning Locker**
+- Secure Lightning web components belonging to one namespace from components in a different namespace through Security with Lightning Locker.
+- Promotes best practices, improves supportability of code by restricting access to supported APIs and eliminating access to nonpublished framework internals.
+
+## Create Lightning WebComponents
+### A Look Into the HTML File
+
+Lightning web component HTML files include the template tag, defining the component's structure. Below is a simplified version of the productCard component from the ebikes repo.
+
+### Steps:
+1. **Create Project:**
+   - Select "SFDX: Create Project" from the Command Palette in VS Code.
+   - Accept the standard template and name the project "bikeCard".
+
+2. **Create Lightning Web Component:**
+   - Right-click the `lwc` folder under `force-app/main/default`.
+   - Select "SFDX: Create Lightning Web Component".
+   - Name the component "app".
+
+3. **HTML (app.html):**
+```html
+<template>
+  <div>
+    <div>Name: {name}</div>
+    <div>Description: {description}</div>
+    <div>Category: {category}</div>
+    <div>Material: {material}</div>
+    <div>Price: {price}</div>
+    <div><img src={pictureUrl}/></div>
+  </div>
+</template>
+```
+
+4. **JavaScript (app.js):**
+```javascript
+import { LightningElement } from 'lwc';
+export default class App extends LightningElement {
+  name = 'Electra X4';
+  description = 'A sweet bike built for comfort.';
+  category = 'Mountain';
+  material = 'Steel';
+  price = '$2,700';
+  pictureUrl = 'https://s3-us-west-1.amazonaws.com/sfdc-demo/ebikes/electrax4.jpg';
+}
+```
+
+5. **Real-world Example with Conditional Rendering:**
+   - Use `lwc:if` and `lwc:else` conditional directives to manage rendering based on data readiness.
+
+### HTML (app.html):
+```html
+<template>
+  <template lwc:if={ready}>
+    <div id="display">
+      <div>Name: {name}</div>
+      <div>Description: {description}</div>
+      <div>Category: {category}</div>
+      <div>Material: {material}</div>
+      <div>Price: {price}</div>
+      <div><img src={pictureUrl}/></div>
+    </div>
+  </template>
+  <template lwc:else>
+    <div id="waiting">Loading…</div>
+  </template>
+</template>
+```
+
+### JavaScript (app.js):
+```javascript
+import { LightningElement } from 'lwc';
+export default class App extends LightningElement {
+  name = 'Electra X4';
+  description = 'A sweet bike built for comfort.';
+  category = 'Mountain';
+  material = 'Steel';
+  price = '$2,700';
+  pictureUrl = 'https://s3-us-west-1.amazonaws.com/sfdc-demo/ebikes/electrax4.jpg';
+  ready = false;
+  connectedCallback() {
+    setTimeout(() => {
+      this.ready = true;
+    }, 3000);
+  }
+}
+```
+
+6. **Save the files.**
+
+### Base Lightning Web Components
+
+To utilize base Lightning web components, you can easily integrate them into your project. Let's enhance the bike details display by using a lightning-badge component.
+
+**HTML (app.html):**
+```html
+<template>
+  <template lwc:if={ready}>
+    <div id="display">
+      <div>Name: {name}</div>
+      <div>Description: {description}</div>
+      <lightning-badge label={material}></lightning-badge>
+      <lightning-badge label={category}></lightning-badge>
+      <div>Price: {price}</div>
+      <div><img src={pictureUrl}/></div>
+    </div>
+  </template>
+  <template lwc:else> 
+    <div id="waiting">Loading…</div>
+  </template>
+</template>
+```
+- Replace the div tags for material and category with lightning-badge components.
+
+**Note**:
+- The words Steel and Mountain appear as badges, enhancing the presentation.
+
+**Component Build Structure:**
+- Each component needs a folder and files with the same name, automatically linked by name and location.
+  
+**Component files in a folder:**
+- All Lightning web components have a namespace separated from the folder name by a hyphen. For example, `<c-app>` for the component in the default namespace `c`.
+- Salesforce platform doesn't allow hyphens in the component folder or file names. Use camel case to name your component like `myComponent`.
+- Camel case component folder names map to kebab-case in markup. For example, `<c-my-component>`.
+- Example: The `viewSource` component in the `LWC Samples` repo is referenced as `c-view-source` in HTML.
+
+-- App
+  -- app.css
+  -- app.html
+  -- app.js
+
+  Here's a breakdown of working with JavaScript in Lightning web components:
+
+### JavaScript Structure:
+- JavaScript methods define component behavior, handling input, data, events, and state changes.
+
+#### Base Class and Module:
+- The JavaScript file must import `LightningElement` from the `lwc` module and extend it with the component's class.
+- Use of ECMAScript 6 modules bundles core functionality, making it accessible to component JavaScript.
+- Example:
+  ```javascript
+  import { LightningElement } from 'lwc';
+  export default class MyComponent extends LightningElement {
+    // Component functionality goes here
+  }
+  ```
+
+#### Lifecycle Hooks:
+- Lightning web components provide methods, called lifecycle hooks, to respond to critical events in a component's lifecycle.
+- Examples include `connectedCallback()` for component insertion in the DOM.
+- Lifecycle methods allow automatic execution of code at specific lifecycle stages.
+- Example:
+  ```javascript
+  import { LightningElement } from 'lwc';
+  export default class MyComponent extends LightningElement {
+    ready = false;
+    connectedCallback() {
+      setTimeout(() => {
+        this.ready = true;
+      }, 3000);
+    }
+  }
+  ```
+
+#### Decorators:
+- Decorators modify the behavior of properties or functions.
+- Imported from the `lwc` module and placed before the property or function.
+- Examples include `@api`, `@track`, and `@wire` decorators.
+- Example:
+  ```javascript
+  import { LightningElement, api, track } from 'lwc';
+  export default class MyComponent extends LightningElement {
+    @api message;
+    @track data;
+    // More component code...
+  }
+  ```
+
+**Note:**
+- Decorators like `@api` mark fields as public, allowing access from parent components.
+- `@track` observes changes to object properties or array elements, triggering component rerendering.
+- `@wire` simplifies data retrieval and binding from a Salesforce org.
+
+## Notes on "Deploy Lightning Web Component Files"
+### Component Configuration File
+The component configuration file with the extension .js-meta.xml provides metadata for Salesforce, including design configuration for components intended for use in Lightning App Builder. Here's an example:
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+  <apiVersion>57.0</apiVersion>
+  <isExposed>true</isExposed>
+  <masterLabel>Product Card</masterLabel>
+  <targets>
+    <target>lightning__AppPage</target>
+    <target>lightning__RecordPage</target>
+    <target>lightning__HomePage</target>
+    <target>lightningCommunity__Page</target>
+  </targets>
+  <targetConfigs>
+    <targetConfig targets="lightning__RecordPage">
+      <objects>
+        <object>Product__c</object>
+      </objects>
+    </targetConfig>
+  </targetConfigs>
+</LightningComponentBundle>
+```
+
+#### Required Elements:
+- `apiVersion`: Binds the component to a Salesforce API version.
+- `isExposed`: Indicates whether the component is exposed to Lightning App Builder or Experience Builder.
+
+#### Optional Elements:
+- `targets`: Specifies which types of Lightning pages the component can be added to in Lightning App Builder.
+- `targetConfigs`: Allows specifying behavior specific to each type of Lightning page, including supported objects.
+
+### Displaying a Component in an Org:
+- Two options:
+  1. Set the component to support various flexipage types and add it to a flexipage using the Lightning App Builder.
+  2. Create a tab pointing to an Aura component containing the Lightning web component.
+
+### Deploying Your Files:
+- Authenticate with your org using SFDX: Authorize an Org from the Command Palette in VS Code.
+- Right-click on the force-app/main/default folder and select SFDX: Deploy this Source to Org.
+
+### Creating a New Page for Your Component:
+- Open your org using SFDX: Open Default Org from the Command Palette in VS Code.
+- In Setup, go to Lightning App Builder.
+- Click New, select App Page, and follow the steps to create a new page.
+- Drag your component onto the page, save, and activate it.
+
+### Viewing Your Component:
+- Access your component in the UI by navigating to the page where it's added, such as through the App Launcher.
+
+## Notes on "Handle Events in Lightning Web Components"
+
+### Events Up, Properties Down
+In a complex component (one that contains several parent and child components), the components can communicate up and down.
+![EventsupPropertiesDown](https://github.com/jeudy100/PlatformDeveloperNotes/assets/19577027/91c262da-7571-4847-86f1-3e7cce952bfa)
+
+### Passing Information Upwards:
+- To pass information upwards from a child component to a parent component, events and event listeners are used.
+- The child component dispatches an event, and the parent component listens for it.
+- Example:
+  - In the child component (`c-todo-item`), a `nextHandler()` method dispatches a custom event named `'next'` when the user clicks a Next button.
+    ```javascript
+    // todoItem.js
+    import { LightningElement } from 'lwc';
+    
+    export default class TodoItem extends LightningElement {
+        nextHandler() {
+            this.dispatchEvent(new CustomEvent('next'));
+        }
+    }
+    ```
+  - In the parent component's template (`todoApp.html`), the child component (`c-todo-item`) is added with an event listener (`onnext`) that calls the `nextHandler()` method in the parent component.
+    ```html
+    <!-- todoApp.html -->
+    <template>
+        <c-todo-item onnext={nextHandler}></c-todo-item>
+    </template>
+    ```
+  - In the parent component's JavaScript (`todoApp.js`), a method named `nextHandler()` handles the event and updates the state accordingly.
+    ```javascript
+    // todoApp.js
+    import { LightningElement } from 'lwc';
+    
+    export default class TodoApp extends LightningElement {
+        nextHandler() {
+            // Update state or perform actions
+        }
+    }
+    ```
+
+### Passing Information Downwards:
+- To pass information downwards from a parent component to a child component, public properties and public methods are used.
+- Public properties are defined in the child component using the `@api` decorator, allowing them to be set by the parent component.
+- Example:
+  - In the child component (`c-todo-item`), a public property named `itemName` is defined with the `@api` decorator.
+    ```javascript
+    // todoItem.js
+    import { LightningElement, api } from 'lwc';
+    
+    export default class TodoItem extends LightningElement {
+        @api itemName;
+    }
+    ```
+  - In the parent component's template (`todoApp.html`), the child component (`c-todo-item`) is added with the `item-name` attribute set to a value, which sets the `itemName` property in the child component.
+    ```html
+    <!-- todoApp.html -->
+    <template>
+        <c-todo-item item-name="Milk"></c-todo-item>
+    </template>
+    ```
+
+### Handling Events in HTML
+In the provided code snippet, the tile component is configured to handle click events directly in the HTML template using an `onclick` event listener. Here's how it works:
+
+```html
+<template>
+  <div class="container">
+    <a onclick={tileClick}>
+      <div class="title">{product.fields.Name.value}</div>
+      <img class="product-img" src={product.fields.Picture_URL__c.value}></img>
+    </a>
+  </div>
+</template>
+```
+
+In this template:
+- An anchor `<a>` tag is used to wrap the tile content.
+- The `onclick` attribute is added to the anchor tag, and its value is set to `{tileClick}`. This means that when the anchor element is clicked, the `tileClick` method in the JavaScript file will be invoked.
+
+In the JavaScript file (`tile.js`), the `tileClick` method is defined as follows:
+
+```javascript
+import { LightningElement, api } from 'lwc';
+
+export default class Tile extends LightningElement {
+  @api product;
+
+  tileClick() {
+    const event = new CustomEvent('tileclick', {
+      detail: this.product.fields.Id.value // Passes the ID of the clicked tile as detail
+    });
+
+    // Fire the custom event from the tile component
+    this.dispatchEvent(event);
+  }
+}
+```
+
+Explanation:
+- When the anchor element is clicked, the `tileClick` method is called.
+- Inside `tileClick`, a new `CustomEvent` is created with the event type `'tileclick'`. The `detail` property of the event object is set to `this.product.fields.Id.value`, which contains the ID of the clicked tile. The `detail` property can contain any information that needs to be passed along with the event.
+- Finally, the custom event is dispatched from the tile component using `this.dispatchEvent(event)`.
+
+
+### Selector App Event Pattern
+The event pattern described in the selector app involves propagating events up through the component hierarchy so that parent components can respond to child events. Here's a breakdown of how the event handling works in the app:
+
+![SelectorAppEventPattern](https://github.com/jeudy100/PlatformDeveloperNotes/assets/19577027/0f5f0f4a-05de-40e9-a59f-5347b6f454b6)
+
+1. **Tile Component (`tile.html` and `tile.js`)**:
+   - `tile.html` contains an `onclick` event listener that calls the `tileClick` handler when a tile is clicked.
+   - `tile.js` defines the `tileClick` method, which creates a new CustomEvent with the event type `'tileclick'` and an object containing detail data, such as the ID of the clicked tile (`this.product.fields.Id.value`).
+
+2. **List Component (`list.html` and `list.js`)**:
+   - `list.html` includes an `ontileclick` event listener that calls the `handleTileClick` handler.
+   - `list.js` defines the `handleTileClick` method, which receives the event (`evt`) and creates another CustomEvent with the event type `'productselected'` and an object containing detail data extracted from the original event (`evt.detail`). This event is then dispatched from the `c-list` component.
+
+3. **Selector Component (`selector.html` and `selector.js`)**:
+   - `selector.html` contains the `onproductselected` event listener that calls the `handleProductSelected` handler.
+   - `selector.js` defines the `handleProductSelected` method, which sets the `selectedProductId` variable to the `evt.detail` value passed into it. The `selectedProductId` variable is then passed from the selector component to the detail component in `selector.html` using the property binding `product-id={selectedProductId}`.
+
+4. **Detail Component (`detail.html` and `detail.js`)**:
+   - `detail.html` utilizes a conditional directive `<template lwc:if={product}>` to conditionally render content based on the existence of the `product` data.
+   - `detail.js` creates a private variable `_productId` to track the state of the `productId` value. It uses a getter and setter pattern to process the value every time it's requested, allowing for logic and conditions to be applied to property assignments.
+
+# Secure Server-Side Development
+## Notes on "Write Secure Apex Controllers"
+### Apex Security and Sharing
+  - Apex code security is crucial.
+  - Apex classes have default access to all data.
+  - Enforcing sharing rules, object and field permissions, and protecting against CRUD and FLS violations are essential.
+
+### Enforcing Sharing Rules
+  - Apex generally runs in system context.
+  - `with sharing` and `without sharing` keywords determine sharing rule enforcement.
+  - `inherited sharing` ensures clarity in sharing context.
+  - Exceptions: `executeAnonymous` and Chatter in Apex.
+  - **Update Permission**
+    - Check if the logged-in user can update the email field of a contact.
+    - Example:
+      ```apex
+      if (Schema.sObjectType.Contact.fields.Email.isUpdateable()) {
+         // Update contact email address
+      }
+      ```
+
+  - **Create Permission**
+    - Verify if the user can create a new contact with an email field.
+    - Example:
+      ```apex
+      if (Schema.sObjectType.Contact.fields.Email.isCreateable()) {
+         // Create new contact
+      }
+      ```
+
+  - **Read Permission**
+    - Ensure the user has access to read the email field of a contact.
+    - Example:
+      ```apex
+      if (Schema.sObjectType.Contact.fields.Email.isAccessible()) {
+         Contact c = [SELECT Email FROM Contact WHERE Id= :Id];
+      }
+      ```
+
+  - **Object-Level Permission for Contact**
+    - Confirm if the user can delete a contact.
+    - Example:
+      ```apex
+      if (Schema.sObjectType.Contact.isDeletable()) {
+         // Delete contact
+      }
+      ```
+
+### Protect Against CRUD and FLS Violations
+  - CRUD access: create, read, update, delete.
+  - Use `WITH SECURITY_ENFORCED` clause in SOQL queries.
+  - Check object and field permissions with `Schema.DescribeSObjectResult` methods.
+  - Helper functions: `isCreateable()`, `isAccessible()`, `isUpdateable()`, `isDeletable()`.
+
+### Field-Level Security
+  - FLS restricts access to fields.
+  - Use `stripInaccessible` method to enforce field- and object-level data protection.
+  - Access checks based on current user's permissions.
+  - `isSet` method identifies inaccessible fields.
+
+### Conclusion
+  - Understanding sharing rules, object and field permissions, CRUD and FLS protections ensures Apex code security.
+  - Next step: Protect against injection vulnerabilities.
+
+## Mitigate SOQL Injection
+
+### Salesforce Object Query Language (SOQL) vs. Structured Query Language (SQL)
+
+- **Differences:**
+  - SOQL is for querying data only, unlike SQL which also modifies data.
+  - Missing functionalities in SOQL:
+    - INSERT, UPDATE, DELETE statements.
+    - Command execution.
+    - JOIN statement (although parent object information can be included).
+    - UNION operator.
+    - Ability to chain queries.
+    - Disallows wild card
+
+- **SOQL Injection Vulnerability:**
+  - SOQL injection is still possible due to incorrect trust in user input.
+  - Example scenario: Searching personnel by title in a developer org.
+  - User input directly inserted into SOQL query without validation.
+  - Example exploit: Adding a condition to the query via input manipulation.
+
+- **Prevention Techniques:**
+  - **Static Query with Bind Variables:**
+    - Recommended method.
+    - User input treated as a variable.
+    - Bind variables can be used in specific clauses.
+   
+   **Note:**
+  	- This code allows for query injections because we are directly using the user input
+   ```apex
+   String query = ‘select id from contact where firstname =\’’+var+’\’’;
+   queryResult = Database.execute(query);
+   ```
+
+   **Note:**
+  	- This code doesn't use the user input directly because it is treated as a variable and not an executable element of the query (bind variable).
+   ```apex
+   queryResult = [select id from contact where firstname =:var]
+   ```
+  
+  - **Typecasting:**
+    - Cast variables to specific types to prevent unexpected input.
+    - By casting all variables as strings, user input can drift outside of expectation
+    - By typecasting variables as integers or Booleans, when applicable, erroneous user input is not permitted
+    - Transform variables back to string for query insertion.
+    - Only good against non-string input
+
+   **Note:**
+        - Age__c is a integer
+   	- Getting the string value here prevents unexpected user input
+   	- If you submitted your SOQL injection payload “1 limit 1” in the search area again, you would see an error rather than a SOQL injection. “1 limit 1” is not considered an integer, so the SOQL injection is 	prevented.
+   ```apex
+   whereClause+='Age__c >'+string.valueOf(textualAge)+'';
+   ```
+  
+  - **Escaping Single Quotes:**
+    - Escape single quote marks in user input using `String.escapeSingleQuotes()`.
+    - Prevents input from being treated as code.
+    - applies only to strings
+    - Not all variables are strings, and not all SOQL injection attacks require the use of a single quote character
+  
+  - **Replacing Characters:**
+    - Blocklist approach to remove "bad characters" from user input.
+    - Less effective than allowlisting.
+    	- it is far easier to predict a few good inputs than it is to predict all possible bad inputs
+     -  
+  
+  - **Allowlisting:**
+    - Create a list of allowed values.
+    - Reject input that doesn't match the list.
+
+- **Conclusion:**
+  - SOQL injection can be prevented using various techniques discussed.
+  - Developers should be aware of vulnerabilities and apply appropriate safeguards.
+  - Next, Cross-Site Request Forgery (CSRF) attack prevention will be discussed.
+
+## Mitigate Cross-Site Request Forgery
+A web application vulnerability where a malicious application causes a user’s client to perform an unwanted action on a trusted site for which the user is authenticated.
+
+- **Scenario:**
+  - Example: Clicking a hyperlink on an external site unknowingly performs an action (e.g., promoting a student to the honor roll) on a trusted site (e.g., School District Management) where the user is authenticated.
+
+- **Prevention Techniques:**
+  - **Token-Based Prevention:**
+    - Include a unique token with all sensitive state-changing requests.
+    - Token must be:
+      - Unique to the request or user’s session.
+      - Difficult to predict (long and random).
+      - Validated by the server to ensure request origin.
+      
+  - **Salesforce Platform Protections:**
+    - Salesforce resources have CSRF tokens attached by default.
+    - Prevent reuse and distribution of hyperlinks to protect privileged accounts.
+    
+  - **Development Best Practices:**
+    - Avoid state-changing HTTP GET requests.
+    - Prefer POST or PUT requests for state changes.
+    - Validate origin header in API endpoints.
+    
+  - **Custom Anti-CSRF Tokens:**
+    - Add anti-CSRF tokens to XMLHttpRequests within Lightning.
+    - Example: Using setRequestHeader() method.
+
+- **Implementation Considerations:**
+  - Proper implementation requires:
+    - Inclusion of tokens in all sensitive requests.
+    - Token uniqueness and unpredictability.
+    - Server-side validation of tokens.
+    
+- **Conclusion:**
+  - Understanding CSRF vulnerabilities is crucial for building secure web applications.
+  - Utilizing token-based prevention and adhering to development best practices help mitigate CSRF risks.
+  - Salesforce provides built-in protections, but developers should still be vigilant in implementing additional safeguards.
+
+# Developer Console Basics
+## Notes on "Get Started with the developer Console"
+The Developer Console in Salesforce is an integrated development environment (IDE) where developers can perform various development tasks within their Salesforce org.
+
+**Features of the Developer Console:**
+1. **Code Editing:** Create, edit, and debug Apex classes and triggers, Aura components, and Visualforce pages and components.
+2. **Package Browsing:** Browse packages created within your org.
+3. **Logging:** Generate logs for debugging purposes and analyze them using different perspectives.
+4. **Testing:** Test Apex code to ensure it's error-free.
+5. **Debugging:** Identify and resolve errors by setting checkpoints in your Apex code.
+6. **SOQL and SOSL Queries:** Write and execute SOQL and SOSL queries to interact with records in your org.
+
+**Usage Scenarios:**
+- Use the Developer Console for immediate changes without installing anything on your computer.
+- Connect to one org and perform development tasks directly within the browser.
+- Access logs, errors, and write queries to interact with records.
+- It's suitable for individual developers or small teams working on one org.
+
+**Accessing the Developer Console:**
+1. After logging in to your org, click on "Developer Console" under the quick access menu or your name.
+2. The main pane serves as the source code editor, while the tabs pane displays logs, errors, and other information.
+
+**Workspace Setup:**
+- A workspace is a collection of resources (tabs) in the Developer Console that helps organize information.
+- Create different workspaces for different projects or tasks to reduce clutter and improve navigation.
+- To set up a workspace, go to Workspace > New Workspace, give it a name, and start organizing your resources.
+- Switch between workspaces by selecting Workspace > Switch Workspace.
+
+## Notes on "Navigate and Edit Source Code"
+### Creating and Executing Apex Code:
+
+1. **Create an Apex Class:**
+   - In the Developer Console, select `File | New | Apex Class`.
+   - Write your Apex code for sending an email to the Mission Specialist.
+   - Save your code using `File | Save`.
+
+2. **Execute an Apex Class:**
+   - Select `Debug | Open Execute Anonymous Window`.
+   - Copy the provided Apex code and paste it into the window.
+   - Replace `'Enter your email address'` with your email address.
+   - Click `Execute`.
+   - Check your email to see if the message was sent successfully.
+
+### What Are Lightning Components?
+
+Lightning Components is a framework for building responsive user interfaces for both mobile and desktop applications on the Salesforce Lightning Platform. It allows developers to create interactive and visually appealing interfaces using a component-based architecture.
+
+- **Aura Components:** The original model for building Lightning Components. They are based on the Aura framework and support event-driven architecture.
+- **Lightning Web Components:** Introduced in the Spring '19 release, this model offers a modern, standards-based programming model for building Lightning Components using web standards like HTML, JavaScript, and CSS. Lightning Web Components can coexist and interact with Aura Components.
+
+### Using Developer Console for Lightning Components:
+
+- Developer Console allows you to create Aura components and manage component bundles.
+- You can create a component bundle, which acts as a container for all related resources such as controllers, style sheets, and design files.
+- With Developer Console, you can develop, edit, and test your Aura components seamlessly within the Salesforce environment.
+
+### Creating an Aura Component:
+
+1. **Create a New Aura Component:**
+   - In the Developer Console, select `File | New | Lightning Component`.
+   - Name your component "meetGreet" and click Submit.
+   - Click on the tab labeled "meetGreet.cmp" to open the file.
+
+2. **Explore Component Resources:**
+   - On the right-hand side of the window, you'll see a list of resources in the component bundle.
+   - These resources include Style, Helper, Controller, Renderer, and Documentation.
+   - You can open any resource by clicking on it to start building different parts of the component.
+
+3. **Open Saved Aura Components or Resources:**
+   - Select `File | Open Lightning Resources`.
+   - Type your component's name in the search box or select its folder from the list.
+   - Click the arrow next to the folder to see its resources.
+   - Select the resource you want to work on and click `Open Selected`.
+
+### Create a Visualforce Page:
+
+1. **Create a New Visualforce Page:**
+   - Select `File | New | Visualforce Page`.
+   - Name your page "FlightSystemsChecklist" and click Save.
+   - Click on `File | Save` to save the Visualforce page.
+
+2. **Preview the Visualforce Page:**
+   - In the top left corner, click `Preview` to open a preview of your Visualforce page in your browser.
+
+3. **Open Saved Visualforce Pages:**
+   - Select `File | Open`.
+   - Under Entity Type, click `Pages`.
+   - Double-click the page you want to open from the list of entities.
+
+## Notes on "Generate and Analyze Logs"
+To view debug logs in the text editor using the Developer Console, follow these steps:
+
+1. **Execute Apex Code:**
+   - Select `Debug | Open Execute Anonymous Window`.
+   - Ensure that the Enter Apex Code window is displaying the code you want to execute. If not, paste the correct code.
+   - Replace 'Enter your email address' with your actual email address.
+   - Click `Execute`.
+
+2. **View Logs:**
+   - Before executing the code, enable the option to `Open Log` in the Enter Apex Code window.
+   - After execution, the log will open automatically, displaying the details of the execution.
+
+### View Logs in the Text Editor
+To read your log data in the Developer Console, follow these steps:
+
+1. **Execute Code with Error:**
+   - Select `Debug | Open Execute Anonymous Window`.
+   - Provide an invalid email address, such as 'testingemail'.
+   - Execute the code.
+
+2. **View the Log:**
+   - After the code execution, a dialog box will appear indicating the error.
+   - Click `OK`.
+   - In the `Logs` tab, find and double-click the new log.
+   - If unsure which log is the newest, click the heading for the `Time` column to sort the logs by the time they were generated.
+
+3. **Understanding the Log:**
+   - Each log entry displays a timestamp, event, and details about the code execution.
+   - The `Timestamp` column shows when the event occurred.
+   - The `Event` column indicates the type of event, such as `FATAL_ERROR` for errors.
+   - You can filter the log by selecting different options like `This Frame`, `Executable`, or `Debug Only`.
+   - Use the `Filter` option to search for specific text or method names.
+   - You can also view the log as a raw log by selecting `File | Open Raw Log`, which provides more detailed information including nanosecond timestamps.
+
+4. **Using System.debug():**
+   - In your Apex code, you can use `System.debug()` to log messages, variable values, or labeled values for debugging.
+   - Syntax examples:
+     - `System.debug('Your Message');`
+     - `System.debug(yourVariable);`
+     - `System.debug('Your Label: ' + yourVariable);`
+
+### Use the Log Inspector
+The Log Inspector in the Developer Console provides various panel views to offer different perspectives of your code execution. Here's an overview of the log panels available in the Log Inspector:
+
+1. **Stack Tree:**
+   - Displays log entries within the hierarchy of their objects and their execution using a top-down tree view.
+   - For example, if one class calls a second class, the second class is shown as the child of the first.
+
+2. **Execution Stack:**
+   - Presents a bottom-up view of the selected item.
+   - It displays the log entry, followed by the operation that called it.
+
+3. **Execution Log:**
+   - Lists every action that occurred during the execution of your code.
+
+4. **Source:**
+   - Shows the contents of the source file, indicating the line of code being run when the selected log entry was generated.
+
+5. **Source List:**
+   - Provides the context of the code being executed when the event was logged.
+   - For example, if you select the log entry generated when the faulty email address value was entered, the Source List shows `execute_anonymous_apex`.
+
+6. **Variables:**
+   - Displays the variables and their assigned values that were in scope when the code that generated the selected log entry was run.
+
+7. **Execution Overview:**
+   - Presents statistics for the code being executed, including the execution time and heap size.
+
+### What Is the Perspective Manager and How Can You Switch Perspectives?
+The Perspective Manager in the Developer Console allows you to customize your workspace layout by grouping panels into different perspectives. Here's how you can switch perspectives and create your own:
+
+1. **Switch Perspectives:**
+   - To switch between predefined perspectives, you can select **Debug | Switch Perspectives** or **Debug | Perspective Manager**.
+   - This action opens a menu where you can choose from available perspectives, such as Debug or Analysis.
+   - For example, the Debug perspective may display the Execution Log, Source, and Variables panels, while the Analysis perspective may include the Stack Tree, Execution Log, Execution Stack, and Execution Overview panels.
+
+2. **Create Your Own Perspective:**
+   - If the predefined perspectives don't meet your needs, you can create your own custom perspective.
+   - First, configure your preferred combination of panels to display in the Developer Console.
+   - Then, select **Debug | Save Perspective As**.
+   - Enter a name for your custom perspective and click OK to save it.
+
+### Log Categories
+1. **ApexCode:**
+   - This log category captures events related to Apex code execution. It includes information about the start and end of Apex methods, as well as any debug statements or system-generated messages within the Apex code.
+   - Examples of events logged under the ApexCode category include method entry and exit points, variable assignments, exception handling, and debug statements.
+   - When troubleshooting Apex code behavior or performance issues, examining logs under the ApexCode category can provide insights into the sequence of method calls, variable values, and potential errors encountered during execution.
+
+2. **Database:**
+   - The Database log category logs events related to database operations within Salesforce, such as Database Manipulation Language (DML) statements, SOSL (Salesforce Object Search Language) queries, and SOQL (Salesforce Object Query Language) queries.
+   - DML statements include operations like insert, update, delete, and undelete performed on Salesforce records.
+   - SOSL and SOQL queries retrieve data from Salesforce objects based on specific search criteria or conditions.
+   - Monitoring logs under the Database category can help identify database-related issues, such as inefficient queries, data manipulation errors, or governor limit violations affecting database operations.
+
+### Log Levels and How to Change Them
+Log levels control the amount of detail logged for each log category in the Developer Console. Here's an overview of the available log levels and how to change them:
+
+1. **Log Levels:**
+   - **NONE:** No log data is recorded.
+   - **ERROR:** Only error messages are logged.
+   - **WARN:** Warning messages and error messages are logged.
+   - **INFO:** Informational messages, warning messages, and error messages are logged.
+   - **DEBUG:** Debug messages, informational messages, warning messages, and error messages are logged.
+   - **FINE:** Fine-grained debug messages, debug messages, informational messages, warning messages, and error messages are logged.
+   - **FINER:** Even more detailed debug messages in addition to all the messages logged at the FINE level.
+   - **FINEST:** The most detailed logging level, including all debug messages, informational messages, warning messages, and error messages.
+
+2. **Changing Log Levels:**
+   - To modify the log levels for different events, select **Debug | Change Log Levels** in the Developer Console.
+   - On the **General Trace Settings for You** tab, click **Add/Change**.
+   - In the **Change DebugLevel** window, choose the desired log level for each log category.
+   - Remember to use log levels judiciously, as setting excessively detailed logging levels (e.g., FINEST) can lead to hitting log limits and longer execution times for your code.
