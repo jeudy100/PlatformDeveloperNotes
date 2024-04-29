@@ -4728,6 +4728,8 @@ The Perspective Manager in the Developer Console allows you to customize your wo
    - First, configure your preferred combination of panels to display in the Developer Console.
    - Then, select **Debug | Save Perspective As**.
    - Enter a name for your custom perspective and click OK to save it.
+   **Note: **
+   - The Debug | View Log Panels menu option is available only when you’re viewing a debug log tab. If, for example, you’re viewing the raw log tab, the option is grayed out.
 
 ### Log Categories
 1. **ApexCode:**
@@ -4759,3 +4761,259 @@ Log levels control the amount of detail logged for each log category in the Deve
    - On the **General Trace Settings for You** tab, click **Add/Change**.
    - In the **Change DebugLevel** window, choose the desired log level for each log category.
    - Remember to use log levels judiciously, as setting excessively detailed logging levels (e.g., FINEST) can lead to hitting log limits and longer execution times for your code.
+
+# Command-Line Interface
+## Notes on "Learn About the Command-Line Interface"
+
+The command-line interface (CLI) offers a text-based way to interact with your computer or software program directly. Here's a summary of its uses and how to access it on different operating systems:
+
+#### Command-Line Uses:
+- **Quick Execution:** Perform complex actions quickly.
+- **Customization:** Customize development workspace tools with plug-ins and packages.
+- **Script Execution:** Execute scripts.
+- **Directory Management:** Create and manage directories.
+- **Version Control:** Interact with version control systems like Git.
+- **Development:** Build and work on source-driven development projects or CI integrations.
+
+### Accessing the Command-Line Tool:
+#### macOS/Linux:
+- **Terminal:** Open Finder and search for "Terminal" or click the terminal icon to open it.
+
+#### Windows:
+- **Command Prompt:** Click Start, type "command" or "cmd" in the search field, and press Enter. Then click the Command Prompt shortcut to open the tool.
+
+#### Code Editor Terminal Window:
+- **Visual Studio Code (VS Code):** Code editors like VS Code have built-in terminal windows. Use VS Code's terminal window to run commands and work with the Salesforce CLI. It provides the ability to code your project and access the terminal window simultaneously.
+
+#### Shell:
+- A shell interprets and executes the commands entered in the command-line interface.
+- On macOS, Zsh (Z shell) is commonly used, while on Windows, PowerShell is the default.
+- Each shell has its syntax and capabilities, with BASH (Bourne Again Shell) being a common choice for macOS and Linux.
+
+#### Differences Between PowerShell and Zsh:
+- **Output Handling:** Zsh treats outputs as strings, while PowerShell treats the output as objects.
+- **Syntax:** Commands are written differently for each OS, and features vary between shells.
+
+### Explore Command Structure and Navigation
+
+All commands have three main parts:
+
+1. **Command:** The action you want the tool to take.
+2. **Flag:** Specifies a value that triggers a process or tells the command what other variables to include.
+3. **Argument:** Tells the system what variable you want to set or which process you want to invoke.
+
+For example:
+
+```
+$ sf project generate -n MyProject
+```
+
+- **Command:** `sf project generate`
+- **Flag:** `-n` (used to specify the project name)
+- **Argument:** `MyProject` (the name of the project)
+
+#### Flags, Switches, and Arguments
+
+- **Flags:** Provide additional information or specify options for the command.
+- **Switches:** Similar to flags but don't require arguments.
+- **Arguments:** Directly influence the behavior of the command.
+
+For instance, in `sf org create scratch -f project-scratch-def.json -d`:
+
+- `-f` specifies the scratch org definition file.
+- `-d` sets the newly created scratch org as default.
+
+#### Navigation Commands
+
+- `cd` (Change Directory): Navigate to a specified directory.
+- `mkdir` (Make Directory): Create a new directory.
+- `cd ..`: Navigate one directory level up.
+- `pwd` (Print Working Directory): View the current directory path.
+
+#### Running Commands
+
+- Type the command in the command-line window and press Enter.
+- Ensure correct capitalization.
+- Observe the prompt symbol (`$` for macOS/Linux, `>` for Windows) to confirm command execution.
+
+#### Viewing Command-Line History
+
+- Type `history` or use the shortcut `F7` in Windows to view command history.
+- Rerun a command by typing `!` followed by the command number. For example, `!499` will rerun the command with number 499.
+
+# Apex Testing
+## Notes on "Get Started with Apex Unit Tests"
+The Apex testing framework in Salesforce is crucial for ensuring the quality and reliability of your Apex code. Here's a summary of key points about Apex unit tests:
+
+1. **Purpose**: Apex unit tests verify that your Apex classes and triggers function correctly and meet requirements for deployment.
+2. **Development Environment**: Apex code can only be written in sandbox environments or Developer orgs, not in production.
+3. **Deployment**: Apex code can be deployed to production orgs from sandboxes, and developers can distribute Apex code to customers via packages on the AppExchange.
+4. **Benefits of Apex Unit Tests**:
+   - Ensuring Apex code functions as expected.
+   - Creating a suite of regression tests to prevent future updates from breaking existing functionality.
+   - Meeting code coverage requirements for deployment or distribution.
+   - Delivering high-quality apps to production users and package subscribers, enhancing trust and productivity.
+5. **Code Coverage Requirement**: Before deployment, at least 75% of Apex code must be covered by tests, and all tests must pass. Triggers must also have some coverage.
+6. **Test Method Syntax**: Test methods are defined using the `@isTest` annotation. They have the following syntax:
+
+```apex
+@isTest
+static void testName() {
+  // code_block
+}
+```
+The `@isTest` annotation denotes a test method. Visibility modifiers (`public`, `private`) are omitted as they don't affect the testing framework's access to test methods.
+7. **Test Classes**: Test methods must be defined within test classes, which are annotated with `@isTest`. Test classes can be private or public, depending on their purpose.
+   
+```apex
+@isTest
+private class MyTestClass {
+  @isTest static void myTest() {
+    // code_block
+  }
+}
+```
+Private test classes are for unit testing, while public test classes are typically used for test data factory classes.
+Apex unit tests are essential for maintaining the quality and reliability of your Salesforce applications, ensuring they perform as expected and meet the needs of users and stakeholders.
+
+**Note:**
+  - Whenever you modify your Apex code, rerun your tests to refresh code coverage results.
+  - A known issue with the Developer Console prevents it from updating code coverage correctly when running a subset of tests. To update your code coverage results, use Test | Run All rather than Test | New Run.
+
+ ## Notes on "Test Apex Triggers"
+ - The test method contains the Test.startTest() and Test.stopTest() method pair, which delimits a block of code that gets a fresh set of governor limits.
+ - In this test, test-data setup uses two DML statements before the test is performed.
+ - To test that Apex code runs within governor limits, isolate data setup’s limit usage from your test’s.
+ - To isolate the data setup process’s limit usage, enclose the test call within the Test.startTest() and Test.stopTest() block.
+ - Also use this test block when testing asynchronous Apex. For more information, see Using Limits, startTest, and stopTest.
+
+ ```apex
+@isTest
+private class TestAccountDeletion {
+  @isTest
+  static void TestDeleteAccountWithOneOpportunity() {
+    // Test data setup
+    // Create an account with an opportunity, and then try to delete it
+    Account acct = new Account(Name='Test Account');
+    insert acct;
+    Opportunity opp = new Opportunity(
+      Name=acct.Name + ' Opportunity',
+      StageName='Prospecting',
+      CloseDate=System.today().addMonths(1),
+      AccountId=acct.Id);
+    insert opp;
+    // Perform test
+    Test.startTest();
+      Database.DeleteResult result = Database.delete(acct, false);
+    Test.stopTest();
+    // Verify
+    // In this case the deletion should have been stopped by the trigger,
+    // so verify that we got back an error.
+    System.assert(!result.isSuccess());
+    System.assert(result.getErrors().size() > 0);
+    System.assertEquals('Cannot delete account with related opportunities.',
+      result.getErrors()[0].getMessage());
+  }
+}
+```
+## Notes on "Create Test Data for Apex Tests"
+
+To refactor the previous test method and utilize the `TestDataFactory` class for test data creation, follow these steps:
+
+1. **Utility test Class**:
+   - In the Developer Console, navigate to File | New | Apex Class.
+   - Enter "TestDataFactory" for the class name and click OK.
+   - Replace the default class body with the provided code snippet, which defines a static method `createAccountsWithOpps()` for generating test account and opportunity records.
+
+```apex
+@isTest
+public class TestDataFactory {
+  public static List<Account> createAccountsWithOpps(Integer numAccts, Integer numOppsPerAcct) {
+    List<Account> accts = new List<Account>();
+    for(Integer i=0;i<numAccts;i++) {
+      Account a = new Account(Name='TestAccount' + i);
+      accts.add(a);
+    }
+    insert accts;
+    List<Opportunity> opps = new List<Opportunity>();
+    for(Integer j=0;j<numAccts;j++) {
+      Account acct = accts[j];
+      // For each account just inserted, add opportunities
+      for(Integer k=0;k<numOppsPerAcct;k++) {
+        opps.add(new Opportunity(Name=acct.Name + ' Opportunity ' + k,
+          StageName='Prospecting',
+          CloseDate=System.today().addMonths(1),
+          AccountId=acct.Id));
+      }
+    }
+    // Insert all opportunities for all accounts.
+    insert opps;
+    return accts;
+  }
+}
+```
+
+# Org Development Model
+## Notes on "Plan for Changes to Your Org"
+
+Moving to org development is a strategic decision that can greatly enhance the development process by introducing better collaboration, version control, and deployment practices. Here's a breakdown of the steps and considerations involved in transitioning to org development:
+
+### Prepare the Release Environments
+As a team, you can choose to use sandboxes for each step of the application lifecycle.
+
+1. **Develop and Test**:
+   - **Environment**: Developer Sandbox
+   - **Purpose**: Individual team members work on their assigned customizations in separate Developer sandboxes.
+   - **Characteristics**: Developer sandboxes are isolated environments where developers can experiment and iterate without affecting each other's work. They contain no production data, providing a clean slate for development and testing.
+
+2. **Build Release**:
+   - **Environment**: Developer Pro Sandbox
+   - **Purpose**: Integration of customizations from individual Developer sandboxes into a shared environment.
+   - **Characteristics**: Developer Pro sandboxes are used for integrating and testing customizations from multiple developers. They provide a collaborative environment for consolidating changes and resolving any conflicts. While they don't contain production data by default, testing data can be seeded to simulate real-world scenarios.
+
+3. **Test Release**:
+   - **Environment**: Partial Sandbox
+   - **Purpose**: User-acceptance testing (UAT) to validate customizations before deployment to production.
+   - **Characteristics**: Partial sandboxes replicate the production environment without including actual production data. They are ideal for conducting comprehensive testing and ensuring that customizations meet business requirements and user expectations. UAT helps identify any issues or discrepancies that need to be addressed before the release.
+
+4. **Release**:
+   - **Environment**: Full Sandbox
+   - **Purpose**: Training users and final validation before deployment to production.
+   - **Characteristics**: Full sandboxes provide an exact replica of the production environment, including a copy of production data. They are used for training users on new features and functionalities, as well as conducting final validation to ensure a smooth transition to production. Full sandboxes minimize the risk of data loss or disruption by allowing thorough testing in a controlled environment.
+
+## Notes on "Test and Deploy Changes"
+Steps to test and deploy:
+
+1. **Pull the Changes from the Repo**
+2. **Authorize the Developer Pro Sandbox**
+  - `SFDX: Authorize and Org`
+  - Select Sandbox
+  - Enter Sandbox alias
+3. **Build the Release Artifact**
+    - `sf project generate manifest`
+      - generates the package.xml
+        - Contains all metadata for the deployment of the current changes. 
+      - `--help` will give the format for commands
+      - `--metadata` will deploy only the new specified metadata components
+        - Examples: 
+     	  - `--metadata CustomObject:Language_Course_Instructor__c`
+          - `--metadata CustomField:Language_Course__c.Course_Instructor__c` 
+          - `--metadata ApexTrigger:LanguageCourseTrigger`
+          - `--metadata ApexClass:TestLanguageCourseClass` 
+      - `--type` generates a destructive manifest file that lists the components to delete 
+4. **Test (Partial) the Release Artifact**
+    -  `sf project deploy start`
+      -  `--help` shows format for command arguments
+      -  `--manifest` the path to the release artifact
+      -  `--target-org` takes the name of the org sandbox you want to deploy the package.xml to
+      -  `--test-level` runs one or more tests depending on the specified level
+          -  `RunSpecifiedTests` is the test level that lets you run sepcific tests specified in the argument
+            -  `--tests` takes the name of a test to be ran
+      -  `sf project deploy start --manifest package.xml --target-org partial-sandbox --test-level RunSpecifiedTests --tests TestLanguageCourseTrigger`
+5. **Release to Production**
+    - `sf project deploy validate`
+      -  `--manifest` the path to the release artifact
+      -  `--test-level RunLocalTests` will run all local (regression) tests
+    -  `sf project deploy quick  --target-org full-sandbox`
+      -  `--job-id <jobID>` the id generated by running `sf project deploy validate`
+      -  `--target-org` takes the name of the org sandbox you want to deploy the package.xml to
