@@ -264,6 +264,59 @@ trigger TriggerName on ObjectName (trigger_events) {
 }
 ```
 
+**Trigger Context Variables**
+
+Triggers in Salesforce provide implicit variables for accessing runtime context. These variables are encapsulated within the `System.Trigger` class.
+
+- **isExecuting**: 
+  - Returns true if the current context is a trigger.
+
+- **isInsert**: 
+  - Returns true if the trigger was fired due to an insert operation.
+
+- **isUpdate**: 
+  - Returns true if the trigger was fired due to an update operation.
+
+- **isDelete**: 
+  - Returns true if the trigger was fired due to a delete operation.
+
+- **isBefore**: 
+  - Returns true if the trigger was fired before any record was saved.
+
+- **isAfter**: 
+  - Returns true if the trigger was fired after all records were saved.
+
+- **isUndelete**: 
+  - Returns true if the trigger was fired after a record is recovered from the Recycle Bin.
+
+- **new**: 
+  - Returns a list of new versions of sObject records.
+  - Available in insert, update, and undelete triggers.
+  - Records can only be modified in before triggers.
+
+- **newMap**: 
+  - Returns a map of IDs to new versions of sObject records.
+  - Available in before update, after insert, after update, and after undelete triggers.
+
+- **old**: 
+  - Returns a list of old versions of sObject records.
+  - Available in update and delete triggers.
+
+- **oldMap**: 
+  - Returns a map of IDs to old versions of sObject records.
+  - Available in update and delete triggers.
+
+- **operationType**: 
+  - Returns an enum of type System.TriggerOperation corresponding to the current operation.
+  - Possible values: BEFORE_INSERT, BEFORE_UPDATE, BEFORE_DELETE, AFTER_INSERT, AFTER_UPDATE, AFTER_DELETE, and AFTER_UNDELETE.
+
+- **size**: 
+  - Represents the total number of records in a trigger invocation, both old and new.
+
+**Note**: 
+- The record firing a trigger may include invalid field values, such as division by zero in a formula.
+- In such cases, the field value is set to null in the `new`, `newMap`, `old`, and `oldMap` variables.
+
 ### Best Practices
 
 Using triggers should be a deliberate choice, and developers should strive to minimize technical overhead by leveraging the platform's declarative capabilities wherever possible.
